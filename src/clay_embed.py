@@ -15,7 +15,6 @@ since this was written -- Clay is an actively developed research repo):
 
 from __future__ import annotations
 
-import importlib.util
 from pathlib import Path
 
 import numpy as np
@@ -24,6 +23,14 @@ import yaml
 
 CHECKPOINT_URL = (
     "https://huggingface.co/made-with-clay/Clay/resolve/main/v1.5/clay-v1.5.ckpt"
+)
+# claymodel is pip-installed straight from git, which only packages the
+# `claymodel` Python module -- it does NOT include the repo's top-level
+# `configs/metadata.yaml`, even though ClayMAEModule's default __init__
+# argument points at that path relative to a full repo checkout. We fetch it
+# separately and pass it explicitly rather than relying on it being nearby.
+METADATA_URL = (
+    "https://raw.githubusercontent.com/Clay-foundation/model/main/configs/metadata.yaml"
 )
 PLATFORM = "sentinel-2-l2a"
 
@@ -45,31 +52,33 @@ def download_checkpoint(dest_dir: str = "checkpoints") -> Path:
     return ckpt_path
 
 
-def _find_metadata_yaml() -> Path:
-    """Locate metadata.yaml inside the installed claymodel package.
-
-    We search rather than hardcode the path since the package's internal
-    layout has moved between versions of the repo.
+def download_metadata_yaml(dest_dir: str = "checkpoints") -> Path:
+    """Download Clay's configs/metadata.yaml (band wavelengths/normalization
+    stats) directly from GitHub, since it isn't included in the pip package.
     """
-    spec = importlib.util.find_spec("claymodel")
-    if spec is None or not spec.submodule_search_locations:
-        raise ImportError(
-            "claymodel is not installed. Run: "
-            "pip install git+https://github.com/Clay-foundation/model.git@main"
-        )
-    pkg_root = Path(list(spec.submodule_search_locations)[0])
-    candidates = list(pkg_root.rglob("metadata.yaml"))
-    if not candidates:
-        raise FileNotFoundError(
-            f"Could not find metadata.yaml under {pkg_root}. "
-            "Check the current claymodel package layout at "
-            "https://github.com/Clay-foundation/model"
-        )
-    return candidates[0]
+    dest = Path(dest_dir)
+    dest.mkdir(parents=True, exist_ok=True)
+    meta_path = dest / "metadata.yaml"
+    if not meta_path.exists():
+        import urllib.request
+
+        try:
+            urllib.request.urlretrieve(METADATA_URL, meta_path)
+        except Exception as e:
+            raise RuntimeError(
+                f"Could not download metadata.yaml from {METADATA_URL}: {e}. "
+                "Check whether Clay-foundation/model moved configs/metadata.yaml "
+                "to a different path, and update METADATA_URL in src/clay_embed.py."
+            ) from e
+    return meta_path
 
 
-def load_model(ckpt_path: Path, device: str = "cuda"):
-    """Load the Clay v1.5 module from a local checkpoint and set eval mode."""
+def load_model(ckpt_path: Path, metadata_path: Path, device: str = "cuda"):
+    """Load the Clay v1.5 module from a local checkpoint and set eval mode.
+
+    `metadata_path` overrides the checkpoint's saved (repo-relative, not
+    portable) default -- see the METADATA_URL comment above.
+    """
     try:
         from claymodel.module import ClayMAEModule
     except ImportError as e:
@@ -81,24 +90,23 @@ def load_model(ckpt_path: Path, device: str = "cuda"):
             "src/clay_embed.py's import accordingly."
         ) from e
 
-    model = ClayMAEModule.load_from_checkpoint(str(ckpt_path))
+    model = ClayMAEModule.load_from_checkpoint(str(ckpt_path), metadata_path=str(metadata_path))
     model.eval()
     model.to(device)
     return model
 
 
-def load_band_stats(platform: str = PLATFORM):
+def load_band_stats(metadata_path: Path, platform: str = PLATFORM):
     """Read per-band wavelength (nm) and normalization mean/std for `platform`
     out of Clay's own metadata.yaml, so we don't hand-transcribe numbers that
     could silently drift out of sync with a newer checkpoint.
     """
-    meta_path = _find_metadata_yaml()
-    with open(meta_path) as f:
+    with open(metadata_path) as f:
         meta = yaml.safe_load(f)
 
     if platform not in meta:
         raise KeyError(
-            f"'{platform}' not found in {meta_path}. Available platforms: "
+            f"'{platform}' not found in {metadata_path}. Available platforms: "
             f"{list(meta.keys())}. Update PLATFORM in src/clay_embed.py to match."
         )
     platform_meta = meta[platform]
