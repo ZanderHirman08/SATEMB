@@ -102,6 +102,60 @@
         the west).
       </p>
     </section>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Does terrain leak into the embeddings?</h2>
+      <p>
+        Clay never receives elevation, slope, or any terrain data as input &mdash; only 10
+        Sentinel-2 reflectance bands plus wavelength/time/location metadata. The Front Range spans
+        roughly 1,800 meters of relief across the AOI, so if any embedding axis tracks elevation
+        anyway, that's the model inferring terrain from spectral and textural cues alone. Fetched
+        <a href="https://planetarycomputer.microsoft.com/dataset/3dep-seamless" target="_blank" rel="noopener">USGS 3DEP</a>
+        elevation for all 725 chips and checked it against the embeddings, extending the PCA
+        correlation check past the top 3 components examined in the first entry out to 10.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">&minus;0.82</div><div class="label">PC1 &harr; elevation (r), vs. &minus;0.55 for NDVI</div></div>
+        <div class="metric"><div class="value">&minus;0.73</div><div class="label">PC4 &harr; NDVI (r), on only 6.2% of variance</div></div>
+      </div>
+
+      <figure>
+        <img src="figures/elevation_map.png" alt="USGS 3DEP elevation map of the Front Range AOI">
+        <figcaption>Elevation across the AOI (USGS 3DEP): plains around 1,500&ndash;1,700m to the east, foothills climbing past 3,000m along the west edge &mdash; the actual Rocky Mountain Front Range escarpment is the sharp diagonal boundary.</figcaption>
+      </figure>
+
+      <p>
+        PC1 &mdash; the same axis the first entry called a &ldquo;human development&rdquo; axis
+        because it correlated with NDBI (0.61) and NDVI (&minus;0.55) &mdash; turns out to
+        correlate with raw elevation more strongly than with either spectral index
+        (r = &minus;0.82). That reframes the earlier read: PC1 may be more fundamentally a
+        <em>terrain</em> axis, with vegetation and built-up-ness riding along as downstream
+        correlates, because on this specific landscape elevation, land cover, and development are
+        all confounded with each other (mountains are forested and undeveloped, plains are dry and
+        built up). This can't be fully disentangled without a landscape where elevation and land
+        cover vary independently of each other &mdash; a real limitation of a single-AOI study, not
+        a caveat to bury.
+      </p>
+
+      <p>
+        Two more specific catches came out of extending past the top 3 components. PC2 correlates
+        with <em>slope</em> (r = 0.48) more than with elevation (r = 0.43), and barely at all with
+        NDVI (r = &minus;0.05) &mdash; while still being the component most tied to NDBI (0.66)
+        from the first entry. One plausible read: PC2 tracks development specifically on sloped,
+        foothill-adjacent terrain (canyon-mouth towns like Golden, Boulder's mountain fringe),
+        distinct from PC1's broader plains-vs-mountains axis. More strikingly, PC4 &mdash;
+        responsible for only 6.2% of variance, easy to ignore &mdash; correlates with NDVI at
+        r = &minus;0.73, a cleaner vegetation signal than PC1's &minus;0.55 and nearly uncorrelated
+        with elevation or slope. The dominant component isn't always the most interpretable one.
+      </p>
+
+      <figure>
+        <img src="figures/cluster_elevation.png" alt="Mean elevation per embedding cluster">
+        <figcaption>Mean elevation per k-means cluster (clusters were built with zero elevation information). The three forest-dominant clusters from the first entry (1, 4, 7) sit at 2,241&ndash;2,742m; the five built-up/cropland/grassland-dominant clusters (0, 2, 3, 5, 6) sit at 1,533&ndash;1,772m &mdash; a clean, independently-confirmed split.</figcaption>
+      </figure>
+    </section>
   </div>
 </body>
 </html>

@@ -76,6 +76,23 @@ maybe — orthogonal to how green a chip is. PC3 correlates weakly with everythi
 means it's capturing something a simple band-ratio index can't describe: texture, spatial
 context, or a trace of Clay's time/location conditioning.
 
+**Update, after checking against elevation (USGS 3DEP, not something Clay was ever given):**
+PC1 correlates with raw elevation at **r = −0.82** — stronger than either spectral index above.
+That reframes it: PC1 may be more fundamentally a *terrain* axis than a "development" axis, with
+vegetation and built-up-ness riding along as downstream correlates, since on this landscape
+elevation, land cover, and development are all confounded (mountains are forested and
+undeveloped, plains are dry and built up). Extending the PCA check to 10 components also caught
+two things the original top-3 check couldn't: PC2 tracks *slope* (r = 0.48) more than elevation,
+plausibly a "development-on-foothill-terrain" signal distinct from PC1's plains-vs-mountains
+split; and PC4, only 6.2% of variance, turns out to be a *cleaner* vegetation axis (r = −0.73
+with NDVI) than dominant PC1 ever was. Full write-up in the
+[Analysis Log](https://zanderhirman08.github.io/SATEMB/log.html).
+
+![Mean elevation per embedding cluster](docs/figures/cluster_elevation.png)
+_Clusters were built with zero elevation information, yet split cleanly: the three
+forest-dominant clusters sit at 2,241–2,742m, the five built-up/cropland/grassland-dominant
+clusters sit at 1,533–1,772m — independent confirmation the clusters track real geography._
+
 **Clusters agree with real land cover, unevenly.** KMeans-8 over the raw 1024-dim embeddings
 scores an Adjusted Rand Index of **0.275** against ESA WorldCover (0 = chance, 1 = perfect;
 matched all 725/725 chips). That's a real, well-above-chance signal, not a coincidence — and

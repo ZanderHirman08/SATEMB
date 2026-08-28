@@ -28,20 +28,23 @@
         addressed that gap using Clay v1.5, an openly released masked-autoencoder foundation
         model, applied to 725 chips of Sentinel-2 imagery spanning the Boulder-to-Denver Front
         Range of Colorado, United States. Each 224-by-224-pixel chip was encoded into a
-        1,024-dimensional embedding, then analyzed with principal component analysis,
-        correlation against hand-computed spectral indices, k-means clustering validated against
-        the independent ESA WorldCover land-cover product, and a vector-arithmetic
-        compositionality test. The dominant embedding axis explained 59.4% of variance and
-        correlated with built-up-ness (r = 0.61 against the normalized difference built-up
-        index) and negatively with vegetation (r = &minus;0.55 against the normalized difference
-        vegetation index). Unsupervised clusters agreed with independent WorldCover labels at an
-        Adjusted Rand Index of 0.275, with built-up and tree-cover classes separating cleanly
-        while cropland and grassland did not. A vector-arithmetic query (urban minus vegetation
+        1,024-dimensional embedding, then analyzed with principal component analysis, correlation
+        against hand-computed spectral indices and independently sourced elevation and slope,
+        k-means clustering validated against the independent ESA WorldCover land-cover product,
+        and a vector-arithmetic compositionality test. The dominant embedding axis explained 59.4%
+        of variance and correlated with elevation (r = &minus;0.82) more strongly than with
+        built-up-ness (r = 0.61) or vegetation (r = &minus;0.55), suggesting the axis is more
+        fundamentally terrain-related than development-related on this landscape, while a later
+        component explaining only 6.2% of variance correlated more strongly with vegetation
+        (r = &minus;0.73) than the dominant axis did. Unsupervised clusters agreed with independent
+        WorldCover labels at an Adjusted Rand Index of 0.275, separating cleanly by both land
+        cover and, independently, by elevation. A vector-arithmetic query (urban minus vegetation
         plus water) returned a nearest match at 0.951 cosine similarity against an 0.828 mean
-        baseline, indicating partial linear compositionality. These results show that a single
-        openly released foundation-model checkpoint can produce embeddings with measurable,
-        interpretable structure using only free data and tooling, while also showing precisely
-        where that structure breaks down.
+        baseline,
+        indicating partial linear compositionality. These results show that a single openly
+        released foundation-model checkpoint can produce embeddings with measurable, interpretable
+        structure using only free data and tooling, while also showing precisely where that
+        structure breaks down and where its most-apparent interpretation can be misleading.
       </p>
     </div>
 
@@ -231,7 +234,15 @@
       minus the mean embedding of the tree-cover-dominant cluster plus the embedding of the chip
       nearest Boulder Reservoir, following the compositional structure reported for word embeddings
       (Mikolov et al., 2013), and reported the cosine similarity of the nearest actual chip to this
-      composite vector against the mean similarity across all other chips as a baseline.
+      composite vector against the mean similarity across all other chips as a baseline. Fifth, to
+      test whether embedding structure reflects terrain that the checkpoint never received as
+      input, elevation was retrieved for the study area from the USGS 3D Elevation Program (U.S.
+      Geological Survey, 2019) at 10-meter resolution on the same grid as the Sentinel-2 mosaic,
+      slope was computed from the elevation raster's finite-difference gradient, and both were
+      averaged within each chip's footprint. The PCA analysis was then extended from three to ten
+      components, each correlated against mean elevation and mean slope in addition to NDVI, to
+      check whether any component beyond the original three, which explains less variance but was
+      never examined against a non-spectral quantity, corresponds to terrain.
     </p>
 
     <h2 class="section-title">4. Results</h2>
@@ -355,6 +366,59 @@
     </table>
     <p class="table-note">Bold: highest similarity. Cluster identities correspond to Table 1.</p>
 
+    <p>
+      Extending the PCA analysis from three to ten components and correlating each against
+      elevation and slope (Table 4) found that the first component, already identified in Table 2
+      as tracking built-up-ness and vegetation, correlates with raw elevation more strongly than
+      with either spectral index (r = &minus;0.82, against &minus;0.55 for NDVI and 0.61 for
+      NDBI). The second component correlates more strongly with slope (r = 0.48) than with
+      elevation (r = 0.43) and is nearly uncorrelated with NDVI (r = &minus;0.05). The fourth
+      component, responsible for only 6.2% of variance, correlates with NDVI at r = &minus;0.73,
+      a stronger vegetation correlation than the first component's, while remaining nearly
+      uncorrelated with elevation (r = &minus;0.11) and slope (r = &minus;0.15). Components five
+      through ten each correlate with elevation, slope, and NDVI at magnitudes below 0.3
+      (Figure 5).
+    </p>
+
+    <table>
+      <caption><strong>Table 4.</strong> Pearson correlation of the top ten PCA components against mean elevation, mean slope, and NDVI (n = 725 chips). Components explaining under 1% of variance (PC8&ndash;PC10) shown for completeness.</caption>
+      <thead>
+        <tr><th class="rowlabel">Component</th><th>Variance explained</th><th>r (elevation)</th><th>r (slope)</th><th>r (NDVI)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="rowlabel">PC1</td><td>59.4%</td><td class="best">&minus;0.82</td><td>&minus;0.70</td><td>&minus;0.55</td></tr>
+        <tr><td class="rowlabel">PC2</td><td>14.2%</td><td>0.43</td><td class="best">0.48</td><td>&minus;0.05</td></tr>
+        <tr><td class="rowlabel">PC3</td><td>8.6%</td><td>0.01</td><td>&minus;0.17</td><td>&minus;0.14</td></tr>
+        <tr><td class="rowlabel">PC4</td><td>6.2%</td><td>&minus;0.11</td><td>&minus;0.15</td><td class="best">&minus;0.73</td></tr>
+        <tr><td class="rowlabel">PC5</td><td>1.9%</td><td>&minus;0.18</td><td>&minus;0.11</td><td>0.26</td></tr>
+        <tr><td class="rowlabel">PC6</td><td>1.3%</td><td>0.12</td><td>&minus;0.02</td><td>0.03</td></tr>
+        <tr><td class="rowlabel">PC7</td><td>0.8%</td><td>&minus;0.13</td><td>&minus;0.29</td><td>0.16</td></tr>
+        <tr><td class="rowlabel">PC8</td><td>0.6%</td><td>0.08</td><td>0.07</td><td>0.01</td></tr>
+        <tr><td class="rowlabel">PC9</td><td>0.5%</td><td>&minus;0.02</td><td>&minus;0.11</td><td>0.02</td></tr>
+        <tr><td class="rowlabel">PC10</td><td>0.5%</td><td>&minus;0.01</td><td>0.06</td><td>&minus;0.01</td></tr>
+      </tbody>
+    </table>
+    <p class="table-note">Bold: largest-magnitude value per column among the three correlates shown. Elevation and slope from USGS 3DEP (U.S. Geological Survey, 2019); NDVI reproduced from Table 2 for comparison.</p>
+
+    <figure>
+      <img src="figures/elevation_map.png" alt="USGS 3DEP elevation map of the Front Range study area">
+      <figcaption><strong>Figure 5.</strong> Elevation across the study area (USGS 3DEP, 10m resolution), reprojected and gridded identically to the Sentinel-2 mosaic in Section 3.1. Plains sit near 1,500&ndash;1,700m in the east; the Rocky Mountain Front Range escarpment climbs past 3,000m along the west edge.</figcaption>
+    </figure>
+
+    <p>
+      Mean elevation was compared across the eight k-means clusters from Table 1, which were
+      computed with no elevation information (Figure 6). The three clusters previously identified
+      as tree-cover-dominant (clusters 1, 4, and 7) had mean elevations of 2,413m, 2,241m, and
+      2,742m respectively; the five built-up-, cropland-, or grassland-dominant clusters (0, 2, 3,
+      5, and 6) had mean elevations between 1,533m and 1,772m, a separation with no overlap between
+      the two groups' ranges.
+    </p>
+
+    <figure>
+      <img src="figures/cluster_elevation.png" alt="Mean elevation per embedding cluster">
+      <figcaption><strong>Figure 6.</strong> Mean elevation (&plusmn; standard deviation) per k-means embedding cluster. Cluster identities and dominant WorldCover classes correspond to Table 1.</figcaption>
+    </figure>
+
     <h2 class="section-title">5. Discussion</h2>
 
     <h3 class="subsection-title">5.1 Interpretation</h3>
@@ -373,15 +437,35 @@
       known limitation (Section 2.1): cropland and grassland differ mainly in seasonal growth
       timing rather than in the mid-summer spectral snapshot used here, so a single-date embedding
       has limited information available to separate them regardless of how the embedding is
-      computed downstream. The vector-arithmetic result (Table 3) shows a real gap between the top
-      match and the baseline, indicating the composite direction encodes something specific rather
-      than landing close to every chip indiscriminately, but the gap (0.951 against 0.828) is
-      modest in absolute terms. This is consistent with partial rather than full linear
-      compositionality: Clay's encoder is a nonlinear Vision Transformer trained to reconstruct
-      masked pixels, not a shallow log-linear model explicitly optimized for additive structure the
-      way the original word-vector arithmetic result was (Mikolov et al., 2013), so approximate
-      compositionality emerging as a byproduct is a weaker and more contingent property than it
-      was for word embeddings.
+      computed downstream.
+    </p>
+    <p>
+      Table 4 complicates the development-axis reading of the first component: its correlation
+      with raw elevation (r = &minus;0.82) exceeds its correlation with either spectral index,
+      suggesting a more fundamentally terrain-related axis, with vegetation and built-up-ness
+      riding along as downstream correlates rather than the primary signal. This is physically
+      plausible here specifically, since elevation, land cover, and development are mutually
+      confounded on the Front Range (mountains forested and largely undeveloped, plains dry and
+      built up), and a single-AOI design cannot separate genuine terrain sensitivity from this
+      confound without a landscape where the two vary independently. The second component's
+      stronger correlation with slope than elevation (r = 0.48 against 0.43), combined with its
+      NDBI correlation from Table 2, suggests a narrower reading: development specifically on
+      sloped, foothill-adjacent terrain, distinct from the first component's broader
+      plains-versus-mountains split. The fourth component, only 6.2% of variance and easy to
+      overlook past a three-component check, correlates with NDVI more strongly than the dominant
+      component does (r = &minus;0.73 against &minus;0.55) while staying nearly uncorrelated with
+      elevation, showing the largest-variance axis is not always the most interpretable one.
+    </p>
+    <p>
+      The vector-arithmetic result (Table 3) shows a real gap between the top match and the
+      baseline, indicating the composite direction encodes something specific rather than landing
+      close to every chip indiscriminately, but the gap (0.951 against 0.828) is modest in absolute
+      terms. This is consistent with partial rather than full linear compositionality: Clay's
+      encoder is a nonlinear Vision Transformer trained to reconstruct masked pixels, not a shallow
+      log-linear model explicitly optimized for additive structure the way the original
+      word-vector arithmetic result was (Mikolov et al., 2013), so approximate compositionality
+      emerging as a byproduct is a weaker and more contingent property than it was for word
+      embeddings.
     </p>
 
     <h3 class="subsection-title">5.2 Comparison to prior work</h3>
@@ -416,13 +500,16 @@
       simply did not contain enough of the most heavily burned area. The number of k-means clusters
       (k = 8) was fixed rather than selected by a cluster-validity search, so the specific class
       confusions in Table 1 may partly reflect that choice rather than an intrinsic property of the
-      embedding space. The interpretability check in Section 3.4 used only three hand-built
-      spectral indices; a PCA component or cluster boundary that does not correlate with any of the
-      three cannot be distinguished, by this method, from one that encodes texture, spatial context,
-      or noise. Finally, the vector-arithmetic anchors (Section 3.4) were built from cluster means
-      and a single chip selected by proximity to a named landmark rather than from
-      manually verified pure exemplars, so anchor quality itself is an uncontrolled source of error
-      in the 0.951-versus-0.828 result reported in Table 3.
+      embedding space. NDBI and NDWI were not recomputed for the extended ten-component check in
+      Table 4, so components four through ten were tested only against NDVI, elevation, and slope;
+      a component uncorrelated with all three still cannot be distinguished from one encoding
+      texture or noise. The elevation correlation itself is correlational, drawn from one landscape
+      where elevation and land cover are mutually confounded, and does not establish that Clay
+      represents terrain as a distinct, generalizable concept rather than picking up its downstream
+      correlates. Finally, the vector-arithmetic anchors (Section 3.4) were built from cluster means and a
+      single chip selected by proximity to a named landmark rather than from manually verified pure
+      exemplars, so anchor quality itself is an uncontrolled source of error in the
+      0.951-versus-0.828 result reported in Table 3.
     </p>
 
     <h3 class="subsection-title">5.4 Broader impact</h3>
@@ -452,24 +539,33 @@
       be reliable by construction.
     </p>
     <p>
-      The checkpoint's dominant embedding axis is interpretable and tracks human development
-      rather than vegetation alone (r = 0.61 with NDBI, r = &minus;0.55 with NDVI). Unsupervised
+      The checkpoint's dominant embedding axis is interpretable, but its most apparent
+      interpretation is incomplete: it correlates with vegetation and built-up-ness (r =
+      &minus;0.55 with NDVI, r = 0.61 with NDBI) less strongly than it correlates with raw
+      elevation (r = &minus;0.82), indicating the axis is better described as terrain-related than
+      development-related on this landscape, with a separate, lower-variance component (6.2%)
+      serving as a cleaner vegetation signal (r = &minus;0.73) than the dominant axis. Unsupervised
       structure in the embedding space agrees with independent ESA WorldCover land-cover labels
       well above chance (Adjusted Rand Index = 0.275) but unevenly: cleanly for built-up and
-      tree-cover classes, weakly for cropland and grassland. The embedding space exhibits partial,
-      not full, linear compositionality, with a vector-arithmetic query landing 0.123 cosine
-      similarity points above an all-chip baseline (0.951 versus 0.828). Together these results
-      indicate that a single openly available checkpoint, applied with only free data and compute,
-      produces structure that is real and independently verifiable, bounded by specific,
-      identifiable limits rather than uniform reliability.
+      tree-cover classes, weakly for cropland and grassland; the same clusters, built without any
+      elevation information, separate cleanly by independently sourced elevation as well. The
+      embedding space exhibits partial, not full, linear compositionality, with a vector-arithmetic
+      query landing 0.123 cosine similarity points above an all-chip baseline (0.951 versus 0.828).
+      Together these results indicate that a single openly available checkpoint, applied with only
+      free data and compute, produces structure that is real and independently verifiable, bounded
+      by specific, identifiable limits, and not always correctly characterized by its most obvious
+      correlate.
     </p>
     <p>
       Future work should test whether a multi-date composite spanning a full growing season
       resolves the cropland-grassland confusion observed in Table 1, whether a paired
       pre-and-post-event chip comparison, rather than the single post-event query used in Section
       4, detects the Marshall Fire burn scar that the single-date nearest-neighbor test did not,
-      and whether the vector-arithmetic compositionality gap reported in Table 3 narrows or widens
-      when concept anchors are built from manually verified single chips rather than cluster means.
+      whether the vector-arithmetic compositionality gap reported in Table 3 narrows or widens when
+      concept anchors are built from manually verified single chips rather than cluster means, and
+      whether the elevation correlation reported in Table 4 persists in a second study area where
+      elevation and land cover are not mutually confounded, which would distinguish genuine terrain
+      sensitivity from an artifact of this study's specific landscape.
     </p>
 
     <h2 class="section-title">References</h2>
@@ -483,6 +579,7 @@
       <p>Mikolov, T., Sutskever, I., Chen, K., Corrado, G. S., &amp; Dean, J. (2013). Distributed representations of words and phrases and their compositionality. <em>Advances in Neural Information Processing Systems, 26</em>. <a href="https://arxiv.org/abs/1310.4546" target="_blank" rel="noopener">https://arxiv.org/abs/1310.4546</a></p>
       <p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., &amp; Duchesnay, E. (2011). Scikit-learn: Machine learning in Python. <em>Journal of Machine Learning Research, 12</em>, 2825&ndash;2830. <a href="https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf" target="_blank" rel="noopener">https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf</a></p>
       <p>Szwarcman, D., Roy, S., Fraccaro, P., G&iacute;slason, &THORN;. E., Blumenstiel, B., Ghosal, R., de Oliveira, P. H., de Sousa Almeida, J. L., Sedona, R., Kang, Y., Chakraborty, S., Wang, S., Gomes, C., Kumar, A., Truong, M., Godwin, D., Lee, H., Hsu, C.-Y., Lal, R., ... Bernabe Moreno, J. (2024). <em>Prithvi-EO-2.0: A versatile multi-temporal foundation model for Earth observation applications</em>. arXiv. <a href="https://arxiv.org/abs/2412.02732" target="_blank" rel="noopener">https://arxiv.org/abs/2412.02732</a></p>
+      <p>U.S. Geological Survey. (2019). <em>3D Elevation Program (3DEP) seamless elevation data</em> [Data set]. U.S. Department of the Interior. Accessed via Microsoft Planetary Computer. <a href="https://planetarycomputer.microsoft.com/dataset/3dep-seamless" target="_blank" rel="noopener">https://planetarycomputer.microsoft.com/dataset/3dep-seamless</a></p>
       <p>Zanaga, D., Van De Kerchove, R., Daems, D., De Keersmaecker, W., Brockmann, C., Kirches, G., Wevers, J., Cartus, O., Santoro, M., Fritz, S., Lesiv, M., Herold, M., Tsendbazar, N. E., Xu, P., Ramoino, F., &amp; Arino, O. (2022). <em>ESA WorldCover 10 m 2021 v200</em> [Data set]. Zenodo. <a href="https://doi.org/10.5281/zenodo.7254221" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.7254221</a></p>
     </div>
   </div>
