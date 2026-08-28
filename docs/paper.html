@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Paper — Front Range Satellite Embeddings</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="paper.css">
+</head>
+<body>
+  <div class="page paper">
+    <a class="back-link" href="index.html">&larr; Back to the map</a>
+    <a class="back-link" href="log.html" style="margin-left:16px;">Analysis Log &rarr;</a>
+
+    <h1 class="paper-title">Clay v1.5: Validating Foundation-Model Satellite Embeddings Against Independent Land-Cover Labels in the Colorado Front Range</h1>
+    <p class="paper-meta">
+      Zander Hirman · August 2026 ·
+      <a href="https://github.com/ZanderHirman08/SATEMB" target="_blank" rel="noopener">Code and data (GitHub)</a>
+    </p>
+
+    <div class="abstract">
+      <div class="label">Abstract</div>
+      <p>
+        Self-supervised foundation models for satellite imagery are increasingly proposed as
+        general-purpose replacements for task-specific remote-sensing classifiers, yet few openly
+        reproducible studies test whether a specific released checkpoint produces embeddings that
+        are both interpretable and independently accurate for a given landscape. This study
+        addressed that gap using Clay v1.5, an openly released masked-autoencoder foundation
+        model, applied to 725 chips of Sentinel-2 imagery spanning the Boulder-to-Denver Front
+        Range of Colorado, United States. Each 224-by-224-pixel chip was encoded into a
+        1,024-dimensional embedding, then analyzed with principal component analysis,
+        correlation against hand-computed spectral indices, k-means clustering validated against
+        the independent ESA WorldCover land-cover product, and a vector-arithmetic
+        compositionality test. The dominant embedding axis explained 59.4% of variance and
+        correlated with built-up-ness (r = 0.61 against the normalized difference built-up
+        index) and negatively with vegetation (r = &minus;0.55 against the normalized difference
+        vegetation index). Unsupervised clusters agreed with independent WorldCover labels at an
+        Adjusted Rand Index of 0.275, with built-up and tree-cover classes separating cleanly
+        while cropland and grassland did not. A vector-arithmetic query (urban minus vegetation
+        plus water) returned a nearest match at 0.951 cosine similarity against an 0.828 mean
+        baseline, indicating partial linear compositionality. These results show that a single
+        openly released foundation-model checkpoint can produce embeddings with measurable,
+        interpretable structure using only free data and tooling, while also showing precisely
+        where that structure breaks down.
+      </p>
+    </div>
+
+    <h2 class="section-title">1. Introduction</h2>
+    <p>
+      Satellite constellations now revisit most of Earth's land surface every few days, producing
+      volumes of imagery that outpace manual review or fully supervised machine learning
+      pipelines dependent on scarce, expensive ground-truth labels. Applications that depend on
+      timely monitoring of this imagery, including deforestation alerts, crop-stress detection,
+      and post-disaster damage assessment, require methods that generalize across geography
+      without a proportional increase in labeled training data. A representation that compresses
+      raw pixels into a compact, general-purpose vector, one that captures land cover, structure,
+      and change without task-specific supervision, would let a single upstream computation serve
+      many downstream applications at a fraction of the labeling cost.
+    </p>
+    <p>
+      Early remote-sensing analysis relied on hand-crafted spectral indices such as the
+      normalized difference vegetation index (NDVI), computed directly from band ratios and
+      interpretable by construction but limited to whatever single physical property each formula
+      targets. Supervised convolutional neural networks improved on fixed formulas by learning
+      task-specific features directly from labeled imagery, at the cost of requiring large
+      labeled datasets for every new task and region. Self-supervised pretraining, demonstrated at
+      scale for natural images through masked autoencoding (He et al., 2022), removed the
+      labeling bottleneck by training a model to reconstruct hidden portions of an image from
+      visible context, and was subsequently adapted to multi-spectral, multi-temporal satellite
+      imagery by SatMAE (Cong et al., 2022) and further extended by geospatial foundation models
+      such as Prithvi-EO-2.0 (Szwarcman et al., 2024) and Clay (Clay Foundation, 2024).
+    </p>
+    <p>
+      Published foundation-model papers report benchmark accuracy on curated downstream tasks,
+      but rarely walk through what a released checkpoint's embeddings look like for a single,
+      geographically coherent case study using only freely available data and compute. It remains
+      underexplored, at the level of a single reproducible worked example, whether an off-the-shelf
+      checkpoint's embedding axes correspond to physically interpretable quantities, whether
+      unsupervised structure in that embedding space agrees with independent ground-truth labels
+      the model never saw, and whether the space is linearly compositional in the sense
+      demonstrated for word embeddings (Mikolov et al., 2013). Without this kind of case-level
+      validation, practitioners adopting a foundation-model checkpoint have limited grounds for
+      judging where it can be trusted, and where it cannot, for their own landscape.
+    </p>
+    <p>
+      This paper presents a fully reproducible pipeline that encodes 725 Sentinel-2 chips across
+      the Front Range of Colorado using the openly released Clay v1.5 checkpoint, then subjects
+      the resulting 1,024-dimensional embeddings to four independent tests: variance decomposition
+      and correlation against hand-computed spectral indices, unsupervised clustering validated
+      against the ESA WorldCover land-cover product, nearest-neighbor sanity checks against
+      true-color imagery, and a vector-arithmetic compositionality test. This paper reports where
+      each test succeeded, where it did not, and quantifies the agreement or disagreement in each
+      case rather than reporting only favorable outcomes.
+    </p>
+    <p>
+      Section 2 reviews prior work on spectral indices, supervised classifiers, and self-supervised
+      foundation models for Earth observation, and situates this study relative to each. Section 3
+      describes the imagery acquisition, chip extraction, embedding generation, and evaluation
+      methodology in enough detail for independent reproduction. Section 4 reports the
+      quantitative results of each of the four tests. Section 5 interprets those results, compares
+      them to prior work, states the limitations of a single-region, single-checkpoint study, and
+      discusses broader impact. Section 6 concludes with a summary of findings and concrete
+      directions for future work.
+    </p>
+
+    <h2 class="section-title">2. Background &amp; Related Work</h2>
+
+    <h3 class="subsection-title">2.1 Hand-crafted spectral indices</h3>
+    <p>
+      Spectral indices compute a normalized ratio between two or more reflectance bands to isolate
+      a single physical property of a land surface, and remain the default first step in optical
+      remote-sensing analysis: NDVI contrasts near-infrared and red reflectance to isolate
+      photosynthetically active vegetation, the normalized difference built-up index (NDBI)
+      contrasts shortwave-infrared and near-infrared reflectance to isolate impervious surfaces,
+      and the normalized difference water index (NDWI) contrasts green and near-infrared
+      reflectance to isolate open water. These formulas are fully interpretable and require no
+      training data, which is why this study uses them as an independent interpretability check in
+      Section 3.4 rather than as the primary representation. Their limitation is that each index
+      targets exactly one physical property from a single acquisition date, so distinguishing
+      land-cover types that differ mainly in phenology or seasonal timing, such as cropland from
+      grassland, requires either a multi-date time series or a representation that captures more
+      than a single band ratio.
+    </p>
+
+    <h3 class="subsection-title">2.2 Supervised deep learning for land-cover classification</h3>
+    <p>
+      Convolutional neural networks trained directly on labeled satellite imagery learn features
+      tailored to a specific classification or segmentation task and outperform hand-crafted
+      indices on that task, provided sufficient labeled examples exist for the region and classes
+      of interest. This dependency is the central practical constraint on the approach: producing
+      reliable labels for satellite imagery requires field verification or expert
+      photo-interpretation, both slow and costly relative to the rate at which new imagery becomes
+      available, so a model trained for one region or crop type transfers unevenly to another.
+    </p>
+
+    <h3 class="subsection-title">2.3 Self-supervised foundation models for Earth observation</h3>
+    <p>
+      Masked autoencoding, in which a model reconstructs randomly hidden patches of an image from
+      the visible remainder, removed the labeling bottleneck for natural images (He et al., 2022)
+      and was adapted to satellite imagery by SatMAE (Cong et al., 2022), which added temporal and
+      per-band spectral positional encodings so a single model could pretrain across multiple
+      satellite revisits and band configurations. Prithvi-EO-2.0 (Szwarcman et al., 2024) extended
+      this line of work to a multi-temporal Vision Transformer trained on Harmonized Landsat and
+      Sentinel-2 data, reporting transfer performance across a benchmark suite of downstream
+      Earth-observation tasks. Clay (Clay Foundation, 2024), the model used in this study, follows
+      the same masked-autoencoding foundation but additionally conditions its encoder on each input
+      band's physical center wavelength and on the approximate acquisition time and location, so a
+      single checkpoint spans multiple sensors rather than one. These models share a common
+      evaluation pattern: report accuracy or intersection-over-union on a fixed downstream
+      benchmark after fine-tuning or linear probing, which demonstrates that the learned
+      representation is useful but does not by itself show what any individual embedding axis
+      represents, nor whether the space it defines is compositional.
+    </p>
+
+    <h3 class="subsection-title">2.4 Independent land-cover products for validation</h3>
+    <p>
+      Global land-cover maps derived from supervised classification of satellite imagery, such as
+      ESA WorldCover (Zanaga et al., 2022), provide 10-meter resolution labels produced
+      independently of any foundation-model training pipeline and so serve as external ground
+      truth for checking whether unsupervised structure in an embedding space corresponds to real,
+      human-verified categories rather than an artifact of the clustering procedure itself.
+    </p>
+    <p>
+      The works reviewed above either introduce a foundation model and report benchmark transfer
+      accuracy, or provide a labeled reference product without testing any embedding model against
+      it end to end. This study instead takes one openly released checkpoint, applies it to one
+      openly reproducible case study using only free data and compute, and reports four
+      independent, quantified tests of what its embeddings actually contain, including a
+      compositionality test in the style of word2vec (Mikolov et al., 2013) that has not, to the
+      extent examined here, been reported for a satellite foundation model in a fully worked, open
+      case study.
+    </p>
+
+    <h2 class="section-title">3. Methodology</h2>
+
+    <h3 class="subsection-title">3.1 Study area and imagery acquisition</h3>
+    <p>
+      The study area was a bounding box spanning approximately 68 by 78 kilometers across the
+      Boulder-to-Denver Front Range of Colorado, United States (39.55&deg;N to 40.25&deg;N,
+      105.55&deg;W to 104.75&deg;W), selected to contain a mixture of dense urban development,
+      suburban fringe, irrigated cropland, forested foothills, open water, and the December 2021
+      Marshall Fire burn scar within a single mosaic. Sentinel-2 Level-2A surface-reflectance
+      imagery (European Space Agency, 2015) was retrieved from the Microsoft Planetary Computer
+      (Microsoft Open Source, 2022) SpatioTemporal Asset Catalog (STAC) API for the period June 1
+      to September 15, 2024, filtered to scenes with less than 10% reported cloud cover. Because
+      the study area intersects two Sentinel-2 Military Grid Reference System tiles, the
+      least-cloudy available scene from each intersecting tile was
+      retained and combined by per-pixel median compositing, then reprojected to UTM Zone 13N
+      (EPSG:32613) at 10-meter resolution.
+    </p>
+
+    <h3 class="subsection-title">3.2 Chip extraction</h3>
+    <p>
+      The composited mosaic was partitioned into a regular, non-overlapping grid of
+      224-by-224-pixel chips (2.24 by 2.24 kilometers at 10-meter resolution), matching the
+      spatial input size of the Clay v1.5 checkpoint's trained positional embeddings. Chips with
+      more than 5% no-data pixels, arising at the mosaic's coverage edges, were discarded. This
+      procedure yielded 725 chips, each retaining ten Sentinel-2 bands spanning the visible,
+      red-edge, near-infrared, and shortwave-infrared regions.
+    </p>
+
+    <h3 class="subsection-title">3.3 Embedding generation</h3>
+    <p>
+      Each chip was encoded with the Clay v1.5 checkpoint (Clay Foundation, 2024), a Vision
+      Transformer-based masked autoencoder that conditions its encoder on the physical center
+      wavelength of each input band and on an approximate acquisition timestamp and location,
+      producing a single 1,024-dimensional embedding per chip taken as the mean of the encoder's
+      output patch tokens, excluding the class token. Per-band normalization statistics and center
+      wavelengths were taken from the checkpoint's published metadata rather than estimated from
+      this study's imagery, so embeddings remain comparable to those produced by the same
+      checkpoint elsewhere.
+    </p>
+
+    <h3 class="subsection-title">3.4 Evaluation methodology</h3>
+    <p>
+      Four evaluations were applied to the resulting 725-by-1,024 embedding matrix. First,
+      principal component analysis (PCA) reduced the embeddings to three components, whose
+      explained variance ratios were recorded and whose scores were correlated (Pearson's r)
+      against NDVI, NDBI, and NDWI, each computed directly from the chip's raw reflectance bands
+      rather than from the embedding, to test whether the dominant axes of embedding variance
+      correspond to physically interpretable quantities. Second, k-means clustering (k = 8,
+      scikit-learn implementation; Pedregosa et al., 2011) was applied to the full 1,024-dimensional
+      embeddings and compared against the majority land-cover class within each chip's footprint
+      from the ESA WorldCover 10-meter 2021 product (Zanaga et al., 2022), using the Adjusted Rand
+      Index as the agreement metric because it corrects for chance agreement and does not require
+      the number of clusters to match the number of reference classes. Third, five representative
+      chips, selected by extreme NDVI, NDBI, or NDWI values and by proximity to the known Marshall
+      Fire burn-scar location, were queried for their ten nearest neighbors by cosine similarity in
+      the full embedding space, and the results were inspected against true-color thumbnails.
+      Fourth, a vector-arithmetic test computed the mean embedding of the built-up-dominant cluster
+      minus the mean embedding of the tree-cover-dominant cluster plus the embedding of the chip
+      nearest Boulder Reservoir, following the compositional structure reported for word embeddings
+      (Mikolov et al., 2013), and reported the cosine similarity of the nearest actual chip to this
+      composite vector against the mean similarity across all other chips as a baseline.
+    </p>
+
+    <h2 class="section-title">4. Results</h2>
+    <p>
+      Unsupervised k-means clustering of the 725 chip embeddings achieved an Adjusted Rand Index
+      of 0.275 against the independent ESA WorldCover land-cover labels, with all 725 chips
+      matched to a majority WorldCover class (Table 1). Agreement was uneven across land-cover
+      types: the largest cluster (128 chips) was dominated by chips WorldCover labeled
+      &ldquo;Built-up,&rdquo; and a separate cluster (57 chips) was dominated by chips labeled
+      &ldquo;Tree cover,&rdquo; while chips labeled &ldquo;Cropland&rdquo; and
+      &ldquo;Grassland&rdquo; were distributed across several clusters rather than concentrating in
+      one or two (Figure 2).
+    </p>
+
+    <table>
+      <caption><strong>Table 1.</strong> Cluster-level agreement between unsupervised k-means (k = 8) over Clay v1.5 embeddings and independent ESA WorldCover land-cover labels, for the 725 study chips. Full per-class breakdown shown in Figure 2.</caption>
+      <thead>
+        <tr><th class="rowlabel">Cluster</th><th>Chips (n)</th><th>Dominant WorldCover class</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="rowlabel">3</td><td>169</td><td>Cropland / Grassland (mixed)</td></tr>
+        <tr><td class="rowlabel">6</td><td>128</td><td class="best">Built-up</td></tr>
+        <tr><td class="rowlabel">2</td><td>118</td><td>Built-up / Grassland (mixed)</td></tr>
+        <tr><td class="rowlabel">0</td><td>112</td><td>Built-up / Grassland (mixed)</td></tr>
+        <tr><td class="rowlabel">5</td><td>66</td><td>Grassland</td></tr>
+        <tr><td class="rowlabel">1</td><td>57</td><td class="best">Tree cover</td></tr>
+        <tr><td class="rowlabel">4</td><td>44</td><td>Tree cover</td></tr>
+        <tr><td class="rowlabel">7</td><td>31</td><td>Tree cover</td></tr>
+        <tr class="baseline-row"><td class="rowlabel">Baseline (chance)</td><td>&mdash;</td><td>Adjusted Rand Index = 0.000 by definition</td></tr>
+      </tbody>
+    </table>
+    <p class="table-note">Bold: clusters with the cleanest single-class dominance. Dominant class read from the confusion matrix in Figure 2; exact per-cluster class tallies are reported there rather than in this table.</p>
+
+    <p>
+      Principal component analysis found that three components explained 82.3% of total embedding
+      variance, concentrated almost entirely in the first component (Table 2). Correlating each
+      component's scores against the three hand-computed spectral indices showed the first
+      component tracking built-up-ness and, in the opposite direction, vegetation, while the
+      second component tracked built-up-ness independently of vegetation, and the third correlated
+      weakly with all three indices. Mapping the first three components directly to red, green, and
+      blue color channels for every chip (Figure 1) produced a spatially coherent image rather than
+      visual noise, indicating that the dominant axes of embedding variance correspond to
+      structure with spatial continuity rather than chip-independent artifacts.
+    </p>
+
+    <table>
+      <caption><strong>Table 2.</strong> Explained variance and Pearson correlation of the top three PCA components against hand-computed spectral indices (n = 725 chips).</caption>
+      <thead>
+        <tr><th class="rowlabel">Component</th><th>Variance explained</th><th>r (NDVI)</th><th>r (NDBI)</th><th>r (NDWI)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="rowlabel">PC1</td><td class="best">59.4%</td><td>&minus;0.55</td><td class="best">0.61</td><td>0.34</td></tr>
+        <tr><td class="rowlabel">PC2</td><td>14.2%</td><td>&minus;0.05</td><td class="best">0.66</td><td>&minus;0.02</td></tr>
+        <tr><td class="rowlabel">PC3</td><td>8.6%</td><td>&minus;0.14</td><td>&minus;0.14</td><td class="best">0.24</td></tr>
+      </tbody>
+    </table>
+    <p class="table-note">Bold: largest-magnitude value per column. NDVI = normalized difference vegetation index; NDBI = normalized difference built-up index; NDWI = normalized difference water index.</p>
+
+    <figure>
+      <img src="figures/pca_semantic_map.png" alt="PCA-projected semantic map of the Front Range study area">
+      <figcaption><strong>Figure 1.</strong> All 725 chips colored by projecting each chip's 1,024-dimensional embedding onto the first three PCA components (Table 2), mapped directly to red, green, and blue channels. No land-cover labels were used to produce this image. The black region in the upper left falls outside both Sentinel-2 tiles used to build the mosaic (Section 3.1) and contains no data.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="figures/cluster_vs_worldcover.png" alt="Confusion matrix of embedding clusters against ESA WorldCover classes">
+      <figcaption><strong>Figure 2.</strong> Chip counts for each combination of k-means embedding cluster (rows) and ESA WorldCover majority class (columns), for the 725 study chips. Color intensity indicates chip count per cell (colorbar, right).</figcaption>
+    </figure>
+
+    <p>
+      A two-dimensional projection of the full 1,024-dimensional embeddings using Uniform Manifold
+      Approximation and Projection (UMAP; McInnes et al., 2018), a nonlinear dimensionality-reduction
+      technique distinct from the linear PCA used above, formed visually discrete, well-separated
+      groups (Figure 3) that corresponded to the k-means cluster assignments,
+      and coloring the same projection by NDVI produced a continuous gradient across the manifold
+      rather than a speckled or discontinuous pattern, indicating that the embedding space's local
+      geometry tracks a real physical quantity beyond what PCA's first three components alone
+      capture.
+    </p>
+
+    <figure>
+      <img src="figures/umap_scatter.png" alt="UMAP projection of Clay embeddings colored by cluster and by NDVI">
+      <figcaption><strong>Figure 3.</strong> Two-dimensional UMAP projection of all 725 embeddings, colored by k-means cluster assignment (left) and by NDVI (right). Axes are unitless UMAP dimensions.</figcaption>
+    </figure>
+
+    <p>
+      Nearest-neighbor queries for the four chips with extreme NDVI, NDBI, or NDWI values returned
+      neighbors visually consistent with the query's land-cover type in true-color thumbnails
+      (forest near forest, dense development near dense development, open water near open water).
+      The fifth query, targeting the chip nearest the Marshall Fire burn-scar location, returned
+      neighbors visually classified as suburban-to-grassland edge rather than a distinct burned
+      signature (Figure 4); Section 5.1 interprets this result.
+    </p>
+
+    <figure>
+      <img src="figures/neighbors_marshall_fire_burn_scar.png" alt="Ten nearest neighbors of the Marshall Fire burn scar query chip">
+      <figcaption><strong>Figure 4.</strong> True-color thumbnail of the chip nearest the Marshall Fire burn-scar location (leftmost) and its five nearest neighbors by cosine similarity in the full 1,024-dimensional embedding space (remaining panels).</figcaption>
+    </figure>
+
+    <p>
+      The vector-arithmetic query (mean embedding of the built-up-dominant cluster minus the mean
+      embedding of the tree-cover-dominant cluster plus the embedding of the chip nearest Boulder
+      Reservoir) returned a top match at 0.951 cosine similarity, compared with a mean similarity
+      of 0.828 across all other chips (Table 3). The five highest-similarity chips were
+      concentrated in the cluster that Table 1 identifies as a Built-up/Grassland mixture rather
+      than the pure Built-up cluster used to construct the urban anchor.
+    </p>
+
+    <table>
+      <caption><strong>Table 3.</strong> Top five chips by cosine similarity to the composite vector (urban &minus; vegetation + water), against the all-chip mean-similarity baseline.</caption>
+      <thead>
+        <tr><th class="rowlabel">Chip ID</th><th>Cosine similarity</th><th>Cluster</th><th>NDVI</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="rowlabel">r024c027</td><td class="best">0.951</td><td>2</td><td>0.190</td></tr>
+        <tr><td class="rowlabel">r007c023</td><td>0.949</td><td>0</td><td>0.216</td></tr>
+        <tr><td class="rowlabel">r008c028</td><td>0.948</td><td>2</td><td>0.210</td></tr>
+        <tr><td class="rowlabel">r004c023</td><td>0.947</td><td>2</td><td>0.198</td></tr>
+        <tr><td class="rowlabel">r020c022</td><td>0.947</td><td>2</td><td>0.174</td></tr>
+        <tr class="baseline-row"><td class="rowlabel">Baseline (all-chip mean)</td><td>0.828</td><td>&mdash;</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+    <p class="table-note">Bold: highest similarity. Cluster identities correspond to Table 1.</p>
+
+    <h2 class="section-title">5. Discussion</h2>
+
+    <h3 class="subsection-title">5.1 Interpretation</h3>
+    <p>
+      The first principal component's simultaneous negative correlation with NDVI and positive
+      correlation with NDBI is consistent with an axis separating biologically active surface
+      cover from non-vegetated surface cover generally, rather than an axis specific to
+      construction or population density. Built-up surfaces and bare or dry ground both register
+      as low-NDVI, and the shared variance this creates plausibly explains why a single dominant
+      component absorbs 59.4% of total variance rather than splitting cleanly into separate
+      vegetation and development axes. The second component's correlation with NDBI in the absence
+      of a corresponding NDVI correlation suggests it captures a property of built environments,
+      possibly structural density or texture, that is independent of how much vegetation
+      surrounds them. The uneven cluster agreement in Table 1, clean for built-up and tree cover
+      but diffuse for cropland and grassland, is consistent with the spectral-index literature's
+      known limitation (Section 2.1): cropland and grassland differ mainly in seasonal growth
+      timing rather than in the mid-summer spectral snapshot used here, so a single-date embedding
+      has limited information available to separate them regardless of how the embedding is
+      computed downstream. The vector-arithmetic result (Table 3) shows a real gap between the top
+      match and the baseline, indicating the composite direction encodes something specific rather
+      than landing close to every chip indiscriminately, but the gap (0.951 against 0.828) is
+      modest in absolute terms. This is consistent with partial rather than full linear
+      compositionality: Clay's encoder is a nonlinear Vision Transformer trained to reconstruct
+      masked pixels, not a shallow log-linear model explicitly optimized for additive structure the
+      way the original word-vector arithmetic result was (Mikolov et al., 2013), so approximate
+      compositionality emerging as a byproduct is a weaker and more contingent property than it
+      was for word embeddings.
+    </p>
+
+    <h3 class="subsection-title">5.2 Comparison to prior work</h3>
+    <p>
+      SatMAE (Cong et al., 2022) and Prithvi-EO-2.0 (Szwarcman et al., 2024) report transfer
+      accuracy or intersection-over-union after fine-tuning or linear probing on curated downstream
+      benchmarks, a different evaluation target from the Adjusted Rand Index reported here for
+      fully unsupervised clustering, so the two are not directly comparable as numbers. The pattern
+      observed in this study, that spectrally similar classes such as cropland and grassland remain
+      difficult to separate, echoes a limitation reported across the supervised land-cover
+      classification literature more broadly (Section 2.2) rather than pointing to a weakness
+      specific to Clay: any single-date optical representation, hand-crafted or learned, faces the
+      same phenological ambiguity. This suggests that the source of the confusion observed in Table
+      1 is more likely the single-date imagery constraint (Section 3.1) than a property of the Clay
+      checkpoint itself, though this study's single-model, single-region design cannot rule out a
+      checkpoint-specific contribution without a second foundation model evaluated under identical
+      conditions.
+    </p>
+
+    <h3 class="subsection-title">5.3 Limitations</h3>
+    <p>
+      This study covers one 68-by-78-kilometer area in a semi-arid climate, containing only six of
+      the eleven ESA WorldCover classes (no wetland, snow/ice, bare/sparse at meaningful area, or
+      mangrove cover was present), so the cropland/grassland confusion and the strength of the
+      built-up axis may not generalize to landscapes with different class compositions, such as
+      humid tropical or high-latitude regions. Imagery was drawn from a single summer acquisition
+      window (June 1 to September 15, 2024) with no multi-season or multi-year comparison, which
+      directly limits the Marshall Fire burn-scar test in Section 4: a single post-event snapshot,
+      taken roughly two and a half years after the December 2021 fire, cannot distinguish whether
+      Clay's embeddings genuinely lack a persistent burn signature at this vegetation-recovery
+      stage from whether the specific 2.24-kilometer chip nearest the fire's recorded location
+      simply did not contain enough of the most heavily burned area. The number of k-means clusters
+      (k = 8) was fixed rather than selected by a cluster-validity search, so the specific class
+      confusions in Table 1 may partly reflect that choice rather than an intrinsic property of the
+      embedding space. The interpretability check in Section 3.4 used only three hand-built
+      spectral indices; a PCA component or cluster boundary that does not correlate with any of the
+      three cannot be distinguished, by this method, from one that encodes texture, spatial context,
+      or noise. Finally, the vector-arithmetic anchors (Section 3.4) were built from cluster means
+      and a single chip selected by proximity to a named landmark rather than from
+      manually verified pure exemplars, so anchor quality itself is an uncontrolled source of error
+      in the 0.951-versus-0.828 result reported in Table 3.
+    </p>
+
+    <h3 class="subsection-title">5.4 Broader impact</h3>
+    <p>
+      Satellite-embedding similarity search, the mechanism underlying the vector-arithmetic and
+      nearest-neighbor tests in this study, generalizes directly to locating other places that
+      resemble a given query location. The same capability that supports legitimate applications
+      such as deforestation-alert triage or post-disaster damage assessment could equally support
+      surveillance of private property or activity at a resolution and scale individuals cannot
+      opt out of, independent of who operates the model. Open, independent validation work of the
+      kind presented here gives downstream adopters a basis for judging where a foundation-model
+      checkpoint's outputs can be trusted, rather than deferring to benchmark claims made by the
+      model's own developers. Because foundation models are trained on data distributions that
+      reflect wherever their training imagery was sourced, a checkpoint validated only in
+      well-represented geographies, as this study's Colorado case necessarily is, may embed
+      under-represented regions and land-cover types less reliably; applying such a checkpoint to
+      humanitarian or environmental-monitoring contexts in those regions without a validation step
+      comparable to Section 4 risks silently unreliable outputs precisely where monitoring matters
+      most.
+    </p>
+
+    <h2 class="section-title">6. Conclusion</h2>
+    <p>
+      This study addressed what a single openly released satellite foundation-model checkpoint's
+      embeddings actually contain, using Clay v1.5 applied to 725 Sentinel-2 chips across
+      Colorado's Front Range and evaluated against independent ground truth rather than assumed to
+      be reliable by construction.
+    </p>
+    <p>
+      The checkpoint's dominant embedding axis is interpretable and tracks human development
+      rather than vegetation alone (r = 0.61 with NDBI, r = &minus;0.55 with NDVI). Unsupervised
+      structure in the embedding space agrees with independent ESA WorldCover land-cover labels
+      well above chance (Adjusted Rand Index = 0.275) but unevenly: cleanly for built-up and
+      tree-cover classes, weakly for cropland and grassland. The embedding space exhibits partial,
+      not full, linear compositionality, with a vector-arithmetic query landing 0.123 cosine
+      similarity points above an all-chip baseline (0.951 versus 0.828). Together these results
+      indicate that a single openly available checkpoint, applied with only free data and compute,
+      produces structure that is real and independently verifiable, bounded by specific,
+      identifiable limits rather than uniform reliability.
+    </p>
+    <p>
+      Future work should test whether a multi-date composite spanning a full growing season
+      resolves the cropland-grassland confusion observed in Table 1, whether a paired
+      pre-and-post-event chip comparison, rather than the single post-event query used in Section
+      4, detects the Marshall Fire burn scar that the single-date nearest-neighbor test did not,
+      and whether the vector-arithmetic compositionality gap reported in Table 3 narrows or widens
+      when concept anchors are built from manually verified single chips rather than cluster means.
+    </p>
+
+    <h2 class="section-title">References</h2>
+    <div class="refs">
+      <p>Clay Foundation. (2024). <em>Clay Foundation Model</em> (Version 1.5) [Computer software]. GitHub. <a href="https://github.com/Clay-foundation/model" target="_blank" rel="noopener">https://github.com/Clay-foundation/model</a></p>
+      <p>Cong, Y., Khanna, S., Meng, C., Liu, P., Rozi, E., He, Y., Burke, M., Lobell, D. B., &amp; Ermon, S. (2022). SatMAE: Pre-training transformers for temporal and multi-spectral satellite imagery. <em>Advances in Neural Information Processing Systems, 35</em>. <a href="https://arxiv.org/abs/2207.08051" target="_blank" rel="noopener">https://arxiv.org/abs/2207.08051</a></p>
+      <p>European Space Agency. (2015). <em>Sentinel-2 user handbook</em>. Copernicus. <a href="https://sentinels.copernicus.eu/documents/247904/685211/Sentinel-2_User_Handbook" target="_blank" rel="noopener">https://sentinels.copernicus.eu/documents/247904/685211/Sentinel-2_User_Handbook</a></p>
+      <p>He, K., Chen, X., Xie, S., Li, Y., Doll&aacute;r, P., &amp; Girshick, R. (2022). Masked autoencoders are scalable vision learners. In <em>Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</em> (pp. 16000&ndash;16009). <a href="https://openaccess.thecvf.com/content/CVPR2022/html/He_Masked_Autoencoders_Are_Scalable_Vision_Learners_CVPR_2022_paper" target="_blank" rel="noopener">https://openaccess.thecvf.com/content/CVPR2022/</a></p>
+      <p>McInnes, L., Healy, J., &amp; Melville, J. (2018). <em>UMAP: Uniform manifold approximation and projection for dimension reduction</em>. arXiv. <a href="https://arxiv.org/abs/1802.03426" target="_blank" rel="noopener">https://arxiv.org/abs/1802.03426</a></p>
+      <p>Microsoft Open Source. (2022). <em>Planetary Computer</em> [Data platform]. Microsoft. <a href="https://planetarycomputer.microsoft.com/" target="_blank" rel="noopener">https://planetarycomputer.microsoft.com/</a></p>
+      <p>Mikolov, T., Sutskever, I., Chen, K., Corrado, G. S., &amp; Dean, J. (2013). Distributed representations of words and phrases and their compositionality. <em>Advances in Neural Information Processing Systems, 26</em>. <a href="https://arxiv.org/abs/1310.4546" target="_blank" rel="noopener">https://arxiv.org/abs/1310.4546</a></p>
+      <p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., &amp; Duchesnay, E. (2011). Scikit-learn: Machine learning in Python. <em>Journal of Machine Learning Research, 12</em>, 2825&ndash;2830. <a href="https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf" target="_blank" rel="noopener">https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf</a></p>
+      <p>Szwarcman, D., Roy, S., Fraccaro, P., G&iacute;slason, &THORN;. E., Blumenstiel, B., Ghosal, R., de Oliveira, P. H., de Sousa Almeida, J. L., Sedona, R., Kang, Y., Chakraborty, S., Wang, S., Gomes, C., Kumar, A., Truong, M., Godwin, D., Lee, H., Hsu, C.-Y., Lal, R., ... Bernabe Moreno, J. (2024). <em>Prithvi-EO-2.0: A versatile multi-temporal foundation model for Earth observation applications</em>. arXiv. <a href="https://arxiv.org/abs/2412.02732" target="_blank" rel="noopener">https://arxiv.org/abs/2412.02732</a></p>
+      <p>Zanaga, D., Van De Kerchove, R., Daems, D., De Keersmaecker, W., Brockmann, C., Kirches, G., Wevers, J., Cartus, O., Santoro, M., Fritz, S., Lesiv, M., Herold, M., Tsendbazar, N. E., Xu, P., Ramoino, F., &amp; Arino, O. (2022). <em>ESA WorldCover 10 m 2021 v200</em> [Data set]. Zenodo. <a href="https://doi.org/10.5281/zenodo.7254221" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.7254221</a></p>
+    </div>
+  </div>
+</body>
+</html>
