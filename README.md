@@ -7,7 +7,7 @@ answer a specific question: **what does a satellite-imagery foundation model's e
 actually contain?** Not "can I use it," but "what's really in there" — is it mostly vegetation?
 Built-up-ness? Something texture-based that doesn't reduce to a spectral index at all?
 
-![PCA semantic map](outputs/figures/pca_semantic_map.png)
+![PCA semantic map](docs/figures/pca_semantic_map.png)
 _Every chip colored by PCA-projecting its 1024-dim [Clay v1.5](https://github.com/Clay-foundation/model)
 embedding down to RGB, with zero supervision — no labels, no land-cover data, nothing but the
 raw embedding vectors. The black wedge in the upper-left is outside both Sentinel-2 tiles used
@@ -75,7 +75,7 @@ the breakdown explains why it isn't higher: one cluster is *almost entirely* "Bu
 another is *almost entirely* "Tree cover," but "Cropland" and "Grassland" bleed across several
 clusters rather than each getting a clean cluster of their own.
 
-![Cluster vs. WorldCover](outputs/figures/cluster_vs_worldcover.png)
+![Cluster vs. WorldCover](docs/figures/cluster_vs_worldcover.png)
 
 That's a sensible failure mode, not a broken pipeline: cropland and grassland can look nearly
 identical spectrally in a single snapshot (their spectral difference is mostly seasonal/temporal
@@ -83,7 +83,7 @@ identical spectrally in a single snapshot (their spectral difference is mostly s
 and "forest" are visually and spectrally distinct enough to separate cleanly even from a single
 date.
 
-![UMAP colored by cluster and NDVI](outputs/figures/umap_scatter.png)
+![UMAP colored by cluster and NDVI](docs/figures/umap_scatter.png)
 
 The embedding space itself is well-organized: UMAP shows discrete, well-separated blobs (left
 panel), and coloring the same layout by NDVI (right panel) produces a clean, continuous
@@ -96,7 +96,7 @@ place (forest near forest, dense urban near dense urban, water near water). The 
 at the Marshall Fire burn scar (Superior/Louisville) returned suburban-edge/grassland neighbors
 that don't look distinctly "burned":
 
-![Marshall Fire burn scar neighbors](outputs/figures/neighbors_marshall_fire_burn_scar.png)
+![Marshall Fire burn scar neighbors](docs/figures/neighbors_marshall_fire_burn_scar.png)
 
 Worth stating plainly rather than glossing over: by the 2024 imagery used here, the scar is
 ~2.5 years regrown, and a chip centroid nearest the fire's location isn't guaranteed to land on
@@ -123,7 +123,7 @@ in Google Colab rather than on this machine.
    fresh Colab VM**, so they hand off intermediate files (`chip_pixels.npy`, `embeddings.npy`,
    etc.) through Google Drive rather than local disk — expect a one-time Drive-access prompt per
    notebook. Notebook 03's last cell writes the real `docs/data/chips.geojson`,
-   `docs/data/embeddings.bin`, and `outputs/figures/*.png` into the local repo checkout on its VM.
+   `docs/data/embeddings.bin`, and `docs/figures/*.png` into the local repo checkout on its VM.
 6. Commit and push those files from inside Colab (a GitHub personal access token as a Colab
    Secret works well — see the token-based `git push` snippet in this repo's history/commits for
    the exact cell), since downloading and re-uploading a binary `.bin` file by hand is error-prone.
@@ -134,8 +134,9 @@ in Google Colab rather than on this machine.
 ```
 notebooks/    the actual pipeline (run in Colab, in order 01 -> 02 -> 03)
 src/          helper modules the notebooks import (STAC search, Clay wrapper, PCA/export)
-docs/         the static site (GitHub Pages source) + the two generated data files
-outputs/      static figures for this README, written by notebook 03
+docs/         the static site (GitHub Pages source): map, generated data, and figures
+analysis/     lightweight follow-up experiments that run locally against docs/data/
+              (no Colab needed -- the full embeddings are already committed there)
 ```
 
 ## Credits

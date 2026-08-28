@@ -1,0 +1,143 @@
+body {
+  padding: 40px 20px 80px;
+  display: flex;
+  justify-content: center;
+}
+
+.page {
+  width: 100%;
+  max-width: 760px;
+}
+
+.page > header {
+  margin-bottom: 40px;
+}
+
+.back-link {
+  display: inline-block;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.page h1 {
+  font-size: 26px;
+  margin: 0 0 8px;
+}
+
+.page > header p {
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.entry {
+  border-top: 1px solid var(--border);
+  padding: 32px 0;
+}
+
+.entry:last-child {
+  padding-bottom: 0;
+}
+
+.entry-date {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.entry h2 {
+  font-size: 19px;
+  margin: 6px 0 14px;
+}
+
+.entry p {
+  font-size: 14.5px;
+  line-height: 1.7;
+  margin: 0 0 14px;
+}
+
+.entry p:last-child {
+  margin-bottom: 0;
+}
+
+.entry code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.entry a {
+  color: var(--accent);
+}
+
+.entry figure {
+  margin: 18px 0;
+}
+
+.entry figure img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.entry figcaption {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  margin: 4px 0 16px;
+}
+
+.result-table th, .result-table td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: center;
+}
+
+.result-table th {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.metric-row {
+  display: flex;
+  gap: 24px;
+  margin: 4px 0 16px;
+  flex-wrap: wrap;
+}
+
+.metric {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+.metric .value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.metric .label {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}

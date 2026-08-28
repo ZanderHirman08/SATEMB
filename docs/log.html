@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analysis Log — Front Range Satellite Embeddings</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="log.css">
+</head>
+<body>
+  <div class="page">
+    <header>
+      <a class="back-link" href="index.html">&larr; Back to the map</a>
+      <h1>Analysis Log</h1>
+      <p>
+        A running record of what we've actually found while poking at these embeddings —
+        in the order we found it, including the parts that didn't work cleanly. See the
+        <a href="https://github.com/ZanderHirman08/SATEMB" target="_blank" rel="noopener">repo</a>
+        for the full write-up and code behind each entry.
+      </p>
+    </header>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Pipeline built &amp; validated against real land cover</h2>
+      <p>
+        725 Sentinel-2 chips across the Boulder&ndash;Denver Front Range, each encoded by
+        <a href="https://github.com/Clay-foundation/model" target="_blank" rel="noopener">Clay v1.5</a>
+        into a 1024-dim vector, then checked against ground truth rather than taken on faith.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">82.3%</div><div class="label">variance in top-3 PCA components</div></div>
+        <div class="metric"><div class="value">0.275</div><div class="label">Adjusted Rand Index vs. ESA WorldCover</div></div>
+        <div class="metric"><div class="value">725 / 725</div><div class="label">chips matched to a WorldCover class</div></div>
+      </div>
+
+      <p>
+        The dominant PCA axis (PC1, 59.4% of variance alone) turned out to track human
+        development rather than vegetation cleanly &mdash; negatively correlated with NDVI
+        (&minus;0.55), positively with NDBI/built-up-ness (0.61). Unsupervised KMeans clusters
+        lined up with real ESA WorldCover land cover well above chance: one cluster came out
+        almost entirely &ldquo;Built-up,&rdquo; another almost entirely &ldquo;Tree cover,&rdquo;
+        while cropland and grassland &mdash; spectrally similar in a single snapshot &mdash;
+        bled across several clusters instead of separating cleanly.
+      </p>
+
+      <figure>
+        <img src="figures/pca_semantic_map.png" alt="PCA-projected semantic map of the Front Range">
+        <figcaption>Every chip colored by its embedding's PCA projection, zero supervision. The colors on the live map's default view.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="figures/cluster_vs_worldcover.png" alt="Embedding clusters vs. ESA WorldCover land cover classes">
+        <figcaption>Where the unsupervised clusters agree cleanly with real land cover (Built-up, Tree cover) and where they don't (Cropland/Grassland).</figcaption>
+      </figure>
+
+      <p>
+        Honest loose end: querying the chip nearest the Marshall Fire burn scar
+        (Superior/Louisville, Dec 2021) didn't return visually &ldquo;burned&rdquo; neighbors &mdash;
+        just generic suburban/grassland edge. By the 2024 imagery used here the scar is ~2.5
+        years regrown, so this doesn't confirm or rule out whether Clay retains a burn signature
+        that long. That's the seed for a proper before/after comparison later in this log.
+      </p>
+    </section>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Embedding arithmetic: urban &minus; vegetation + water</h2>
+      <p>
+        The classic word2vec trick (<code>king &minus; man + woman &asymp; queen</code>) applied to
+        satellite chips, to test something stronger than &ldquo;these chips cluster
+        together&rdquo;: is the embedding space <em>linearly</em> structured, such that concepts
+        can be added and subtracted like vectors? Runs entirely against the embeddings already
+        committed in <code>docs/data/</code> &mdash; no Colab, no GPU, just
+        <a href="https://github.com/ZanderHirman08/SATEMB/blob/main/analysis/embedding_arithmetic.js" target="_blank" rel="noopener"><code>analysis/embedding_arithmetic.js</code></a>.
+      </p>
+      <p>
+        Concept anchors were built from what the previous entry already validated: <strong>urban</strong>
+        = mean embedding of the ~pure &ldquo;Built-up&rdquo; cluster, <strong>vegetation</strong> = mean
+        embedding of the ~pure &ldquo;Tree cover&rdquo; cluster, <strong>water</strong> = the single chip
+        nearest Boulder Reservoir (water chips are too sparse here to form their own cluster).
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">0.951</div><div class="label">top-1 cosine similarity to the result vector</div></div>
+        <div class="metric"><div class="value">0.828</div><div class="label">mean similarity across all other chips (baseline)</div></div>
+      </div>
+
+      <p>
+        The top result is meaningfully above the baseline, not just close to everything &mdash;
+        the arithmetic is doing something real. The closest chips (mostly from a cluster that
+        WorldCover confirms is a Built-up/Grassland mix, not the pure &ldquo;Built-up&rdquo;
+        cluster used as the urban anchor) sit at moderate NDVI (~0.16&ndash;0.22), scattered
+        across the eastern plains near Denver. Read as a sentence: <em>&ldquo;urban character,
+        minus the forest influence, plus a water-adjacent quality&rdquo;</em> lands on
+        development-in-open-grassland-near-water &mdash; not dense downtown, not forest, which is
+        exactly the kind of place that description fits on this actual landscape (the Front
+        Range's development sprawls into prairie to the east, not into the forested foothills to
+        the west).
+      </p>
+    </section>
+  </div>
+</body>
+</html>

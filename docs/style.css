@@ -132,6 +132,19 @@ html, body {
   margin: 0;
 }
 
+.hint + .hint {
+  margin-top: 6px;
+}
+
+.hint a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.hint a:hover {
+  text-decoration: underline;
+}
+
 .maplibregl-popup-content {
   background: var(--panel-bg);
   color: var(--text);
