@@ -1,4 +1,5 @@
-"""PCA/UMAP/clustering and GeoJSON + binary export helpers for notebook 03.
+"""PCA/UMAP/clustering and GeoJSON + binary export helpers for notebook 03
+(and the geojson-merge helper at the bottom, for notebook 04 onward).
 
 The web map (docs/app.js) expects exactly two generated files:
 
@@ -104,3 +105,27 @@ def export_embeddings_bin(embeddings: np.ndarray, out_path: str) -> None:
     embeddings.astype("<f4").tofile(out_path)
     n, d = embeddings.shape
     print(f"Wrote {n}x{d} float32 embeddings ({embeddings.nbytes / 1e6:.1f} MB) to {out_path}")
+
+
+def add_properties_to_geojson(geojson_path: str, extra_props_by_id: dict[str, dict]) -> None:
+    """Merge additional per-chip properties into an already-exported chips.geojson,
+    keyed by each feature's existing "id" property. Used by follow-up analysis
+    notebooks (e.g. 04_elevation_correlation.ipynb) that add new fields -- like
+    elevation/slope -- without needing to regenerate the whole export from
+    scratch. Feature geometry, pca_color, cluster, and ndvi are left untouched;
+    docs/app.js ignores any properties it doesn't know about, so this is safe
+    to run against the file the live map already reads.
+    """
+    with open(geojson_path) as f:
+        geojson = json.load(f)
+
+    updated = 0
+    for feature in geojson["features"]:
+        extra = extra_props_by_id.get(feature["properties"]["id"])
+        if extra is not None:
+            feature["properties"].update(extra)
+            updated += 1
+
+    with open(geojson_path, "w") as f:
+        json.dump(geojson, f)
+    print(f"Updated {updated}/{len(geojson['features'])} features in {geojson_path} with new properties")

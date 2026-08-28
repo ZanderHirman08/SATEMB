@@ -43,8 +43,16 @@ embedding space is capturing anything real, these should end up visually and num
      nearest neighbors in embedding space against true-color thumbnails
    - export the static `docs/data/chips.geojson` + `docs/data/embeddings.bin` the live map reads
 4. **[`docs/`](docs/)** — a static [MapLibre GL JS](https://maplibre.org/) map, no backend: toggle
-   between PCA-projection and cluster coloring, click any chip to compute its 10 nearest
-   neighbors by cosine similarity, entirely client-side, against the real 1024-dim vectors.
+   between PCA-projection, cluster, and continuous-similarity-heatmap coloring; click any chip to
+   compute its nearest neighbors, entirely client-side, against the real 1024-dim vectors.
+5. **[`04_elevation_correlation.ipynb`](notebooks/04_elevation_correlation.ipynb)** — a lighter,
+   CPU-only follow-up: fetches USGS 3DEP elevation over the AOI and checks whether any PCA
+   component (extended past the top 3 examined in notebook 03) or the embedding clusters
+   correlate with terrain, which Clay never saw as an input. Reads directly from the committed
+   `docs/data/` files, so it needs no GPU and no Colab Drive round-trip.
+6. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
+   committed `docs/data/` files, no Colab needed at all (e.g. `embedding_arithmetic.js`, a
+   word2vec-style vector-arithmetic test — see the [Analysis Log](https://zanderhirman08.github.io/SATEMB/log.html)).
 
 ## What Clay's embeddings actually encode
 
@@ -128,6 +136,9 @@ in Google Colab rather than on this machine.
    Secret works well — see the token-based `git push` snippet in this repo's history/commits for
    the exact cell), since downloading and re-uploading a binary `.bin` file by hand is error-prone.
 7. Enable GitHub Pages: repo Settings → Pages → Deploy from branch → `main` / `/docs`.
+8. Optional, CPU-only: run `04_elevation_correlation.ipynb` afterward for the terrain-correlation
+   follow-up. It reads directly from the just-committed `docs/data/` files, so no GPU or Drive
+   round-trip is needed — a plain (non-GPU) Colab runtime is enough.
 
 ## Repo layout
 

@@ -1,7 +1,8 @@
 """STAC search, signing, and chip-grid helpers for the Front Range imagery pipeline.
 
-Used by notebooks/01_fetch_and_chip.ipynb (Sentinel-2 L2A) and
-notebooks/03_analyze_and_export.ipynb (ESA WorldCover, for validation).
+Used by notebooks/01_fetch_and_chip.ipynb (Sentinel-2 L2A),
+notebooks/03_analyze_and_export.ipynb (ESA WorldCover, for validation), and
+notebooks/04_elevation_correlation.ipynb (USGS 3DEP elevation, for validation).
 """
 
 from __future__ import annotations
@@ -71,6 +72,30 @@ def search_worldcover(catalog: pystac_client.Client, bbox: list[float] = FRONT_R
     items = search.item_collection()
     if len(items) == 0:
         raise RuntimeError(f"No ESA WorldCover tiles found for bbox={bbox}.")
+    return items
+
+
+def search_dem(catalog: pystac_client.Client, bbox: list[float] = FRONT_RANGE_BBOX, prefer_gsd: float = 10.0):
+    """Search the USGS 3DEP Seamless elevation collection over the AOI.
+
+    3DEP covers CONUS at either 10m or 30m ground sample distance (gsd)
+    depending on region -- prefer the higher-resolution 10m tiles where
+    available (matches the 10m Sentinel-2 grid), falling back to whatever
+    is actually returned if no 10m coverage exists for this AOI. The
+    elevation values (asset "data") are in meters.
+    """
+    search = catalog.search(collections=["3dep-seamless"], bbox=bbox)
+    items = list(search.item_collection())
+    if len(items) == 0:
+        raise RuntimeError(f"No 3DEP elevation tiles found for bbox={bbox}.")
+
+    preferred = [it for it in items if it.properties.get("gsd") == prefer_gsd]
+    if preferred:
+        return preferred
+    print(
+        f"No {prefer_gsd}m 3DEP tiles found for this AOI; falling back to all "
+        f"{len(items)} available tile(s) (mixed/lower resolution)."
+    )
     return items
 
 
