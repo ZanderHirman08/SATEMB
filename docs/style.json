@@ -1,19 +1,16 @@
 {
   "version": 8,
   "sources": {
-    "carto-light": {
+    "esri-imagery": {
       "type": "raster",
       "tiles": [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
       ],
       "tileSize": 256,
-      "attribution": "&copy; CARTO &copy; OpenStreetMap contributors"
+      "attribution": "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
     }
   },
   "layers": [
-    { "id": "carto-light", "type": "raster", "source": "carto-light" }
+    { "id": "esri-imagery", "type": "raster", "source": "esri-imagery" }
   ]
 }

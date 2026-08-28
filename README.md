@@ -144,4 +144,4 @@ Imagery: [Sentinel-2](https://sentinel.esa.int/web/sentinel/missions/sentinel-2)
 via [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com/). Land cover:
 [ESA WorldCover](https://esa-worldcover.org/en). Model:
 [Clay Foundation Model](https://github.com/Clay-foundation/model) v1.5. Map:
-[MapLibre GL JS](https://maplibre.org/) + [CARTO Basemaps](https://carto.com/basemaps).
+[MapLibre GL JS](https://maplibre.org/) + [Esri World Imagery](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9).
