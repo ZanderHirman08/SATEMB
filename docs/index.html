@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Front Range Satellite Embeddings</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="panel">
+    <h1>Front Range Satellite Embeddings</h1>
+    <p class="subtitle">
+      Each cell is a 2.24&nbsp;km Sentinel-2 chip, encoded by the
+      <a href="https://github.com/Clay-foundation/model" target="_blank" rel="noopener">Clay v1.5</a>
+      foundation model. Color mode below is a direct, unsupervised readout of what
+      the embedding actually captured &mdash; nothing here is hand-labeled.
+    </p>
+
+    <div class="control-row">
+      <span>Color by</span>
+      <div id="color-toggle" class="toggle">
+        <button data-mode="pca_color" class="active">PCA projection</button>
+        <button data-mode="cluster">Cluster</button>
+      </div>
+    </div>
+
+    <div id="info" class="info-empty">Click a chip to inspect it and highlight its 10 nearest neighbors in embedding space.</div>
+
+    <div id="legend"></div>
+
+    <p class="hint">Data: Sentinel-2 L2A via Microsoft Planetary Computer · Basemap: CARTO / OpenStreetMap</p>
+  </div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Installed at the top of each Colab notebook via:
+#   !pip install -q -r requirements-colab.txt
+#
+# Clay is git-installed (no PyPI release), so pin a commit for reproducibility.
+# Swap the commit SHA below for whatever HEAD is at the time you run this if
+# you want the latest fixes, but pinning keeps runs reproducible.
+
+# --- Imagery search / read (notebook 01) ---
+pystac-client>=0.8
+planetary-computer
+odc-stac
+rasterio
+rioxarray
+shapely
+
+# --- Clay embedding model (notebook 02) ---
+git+https://github.com/Clay-foundation/model.git@main
+torch
+torchvision
+einops
+pyyaml
+
+# --- Analysis / export (notebook 03) ---
+scikit-learn
+umap-learn
+hdbscan
+matplotlib
+geopandas
