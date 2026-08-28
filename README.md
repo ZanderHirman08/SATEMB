@@ -1,6 +1,6 @@
 # Front Range Satellite Embeddings
 
-**Live map:** _fill in after enabling GitHub Pages —_ `https://zanderhirman08.github.io/SATEMB/`
+**Live map:** [zanderhirman08.github.io/SATEMB](https://zanderhirman08.github.io/SATEMB/)
 
 An unsupervised, embedding-only map of the Colorado Front Range (Boulder → Denver), built to
 answer a specific question: **what does a satellite-imagery foundation model's embedding vector
