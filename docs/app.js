@@ -13,10 +13,27 @@ const CLUSTER_PALETTE = [
 ];
 const NOISE_COLOR = "#555555"; // HDBSCAN cluster == -1
 
+// Default similarity-mode reference: the chip nearest Boulder Reservoir, so
+// switching into this mode shows something immediately, before any click.
+const BOULDER_RESERVOIR = [40.0800, -105.2280];
+
+// Sequential color ramp for continuous cosine-similarity coloring. Stops
+// chosen from this dataset's observed range (baseline mean ~0.83, top
+// matches ~0.95+) -- MapLibre clamps outside the defined range rather than
+// extrapolating, so this is safe even if a query's true range is narrower.
+const SIMILARITY_STOPS = [
+  0.6, "#151a30",
+  0.75, "#2f5f8a",
+  0.85, "#35b6a8",
+  0.93, "#ffcf5c",
+  1.0, "#ffffff",
+];
+
 let chipsData = null;   // parsed GeoJSON FeatureCollection
 let embeddings = null;  // Float32Array, length N * dim
 let embeddingDim = 0;
 let colorMode = "pca_color";
+let similarityReferenceIdx = null; // index into chipsData.features, or null
 
 const map = new maplibregl.Map({
   container: "map",
@@ -38,6 +55,7 @@ function clusterColorExpression() {
 
 function fillColorExpression(mode) {
   if (mode === "cluster") return clusterColorExpression();
+  if (mode === "similarity") return ["interpolate", ["linear"], ["feature-state", "similarity"], ...SIMILARITY_STOPS];
   return ["get", "pca_color"];
 }
 
@@ -47,6 +65,19 @@ function renderLegend(mode) {
     legend.innerHTML =
       '<span style="color: var(--text-dim)">Colors = PCA(embedding) &rarr; RGB. ' +
       "Similar color = similar embedding, not a fixed category.</span>";
+    return;
+  }
+  if (mode === "similarity") {
+    const refId = similarityReferenceIdx !== null ? chipsData.features[similarityReferenceIdx].properties.id : "?";
+    const stopColors = SIMILARITY_STOPS.filter((_, i) => i % 2 === 1);
+    legend.innerHTML = `
+      <div style="width:100%">
+        <div class="similarity-gradient" style="background:linear-gradient(90deg, ${stopColors.join(", ")})"></div>
+        <div style="display:flex; justify-content:space-between; color:var(--text-dim); font-size:10.5px; margin-top:3px;">
+          <span>less similar</span><span>more similar</span>
+        </div>
+        <div style="color:var(--text-dim); margin-top:4px;">Reference chip: <strong style="color:var(--text)">${refId}</strong> &mdash; click any chip to re-center</div>
+      </div>`;
     return;
   }
   const clusterIds = [...new Set(chipsData.features.map((f) => f.properties.cluster))].sort(
@@ -69,7 +100,41 @@ function setColorMode(mode) {
   document.querySelectorAll("#color-toggle button").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.mode === mode);
   });
+  if (mode === "similarity" && similarityReferenceIdx === null) {
+    const [lat, lon] = BOULDER_RESERVOIR;
+    applySimilarityReference(closestChipTo(lat, lon));
+    return; // applySimilarityReference() already re-renders the legend
+  }
   if (chipsData) renderLegend(mode);
+}
+
+function chipCentroid(feature) {
+  const coords = feature.geometry.coordinates[0];
+  const lats = coords.map((c) => c[1]);
+  const lons = coords.map((c) => c[0]);
+  return [(Math.min(...lats) + Math.max(...lats)) / 2, (Math.min(...lons) + Math.max(...lons)) / 2];
+}
+
+function closestChipTo(lat, lon) {
+  let best = -1, bestDist = Infinity;
+  chipsData.features.forEach((f, i) => {
+    const [flat, flon] = chipCentroid(f);
+    const d = (flat - lat) ** 2 + (flon - lon) ** 2;
+    if (d < bestDist) { bestDist = d; best = i; }
+  });
+  return best;
+}
+
+function applySimilarityReference(queryIdx) {
+  similarityReferenceIdx = queryIdx;
+  const query = embeddings.subarray(queryIdx * embeddingDim, (queryIdx + 1) * embeddingDim);
+  chipsData.features.forEach((f, i) => {
+    const vec = embeddings.subarray(i * embeddingDim, (i + 1) * embeddingDim);
+    const sim = cosineSimilarity(query, vec, embeddingDim);
+    map.setFeatureState({ source: "chips", id: f.properties.id }, { similarity: sim });
+  });
+  map.setFilter("chips-highlight", ["in", ["get", "id"], ["literal", [chipsData.features[queryIdx].properties.id]]]);
+  renderLegend("similarity");
 }
 
 function cosineSimilarity(vecA, vecB, dim) {
@@ -105,6 +170,19 @@ function showInfo(feature, neighborIds) {
       <div><dt>Cluster</dt>${p.cluster === -1 ? "noise" : p.cluster}</div>
       <div><dt>NDVI</dt>${p.ndvi.toFixed(3)}</div>
       <div><dt>Neighbors</dt>${neighborIds.length} highlighted (outlined)</div>
+    </dl>`;
+}
+
+function showSimilarityInfo(feature) {
+  const p = feature.properties;
+  const info = document.getElementById("info");
+  info.classList.remove("info-empty");
+  info.innerHTML = `
+    <dl style="margin:0">
+      <div><dt>Reference</dt>${p.id}</div>
+      <div><dt>Cluster</dt>${p.cluster === -1 ? "noise" : p.cluster}</div>
+      <div><dt>NDVI</dt>${p.ndvi.toFixed(3)}</div>
+      <div><dt>Showing</dt>every chip's similarity to this one</div>
     </dl>`;
 }
 
@@ -159,6 +237,12 @@ async function init() {
       const feature = e.features[0];
       const queryIdx = chipsData.features.findIndex((f) => f.properties.id === feature.properties.id);
       if (queryIdx === -1) return;
+
+      if (colorMode === "similarity") {
+        applySimilarityReference(queryIdx);
+        showSimilarityInfo(feature);
+        return;
+      }
 
       const neighbors = nearestNeighbors(queryIdx, 10);
       const neighborIds = neighbors.map(([idx]) => chipsData.features[idx].properties.id);

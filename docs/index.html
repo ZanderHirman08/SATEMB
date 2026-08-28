@@ -24,10 +24,11 @@
       <div id="color-toggle" class="toggle">
         <button data-mode="pca_color" class="active">PCA projection</button>
         <button data-mode="cluster">Cluster</button>
+        <button data-mode="similarity">Similarity</button>
       </div>
     </div>
 
-    <div id="info" class="info-empty">Click a chip to inspect it and highlight its 10 nearest neighbors in embedding space.</div>
+    <div id="info" class="info-empty">Click a chip to inspect it. In PCA/Cluster mode this also highlights its 10 nearest neighbors; in Similarity mode it re-centers the whole map's coloring on that chip.</div>
 
     <div id="legend"></div>
 
