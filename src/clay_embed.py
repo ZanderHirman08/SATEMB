@@ -70,7 +70,16 @@ def _find_metadata_yaml() -> Path:
 
 def load_model(ckpt_path: Path, device: str = "cuda"):
     """Load the Clay v1.5 module from a local checkpoint and set eval mode."""
-    from claymodel.module import ClayMAEModule
+    try:
+        from claymodel.module import ClayMAEModule
+    except ImportError as e:
+        raise ImportError(
+            "Could not import ClayMAEModule from claymodel.module -- the "
+            "package layout may have changed. Run `import claymodel, pkgutil; "
+            "print([m.name for m in pkgutil.walk_packages(claymodel.__path__, "
+            "prefix='claymodel.')])` to list actual submodules, then update "
+            "src/clay_embed.py's import accordingly."
+        ) from e
 
     model = ClayMAEModule.load_from_checkpoint(str(ckpt_path))
     model.eval()
@@ -87,7 +96,22 @@ def load_band_stats(platform: str = PLATFORM):
     with open(meta_path) as f:
         meta = yaml.safe_load(f)
 
+    if platform not in meta:
+        raise KeyError(
+            f"'{platform}' not found in {meta_path}. Available platforms: "
+            f"{list(meta.keys())}. Update PLATFORM in src/clay_embed.py to match."
+        )
     platform_meta = meta[platform]
+
+    available_bands = list(platform_meta.get("bands", {}).get("wavelength", {}).keys())
+    missing = [b for b in BAND_NAMES if b not in available_bands]
+    if missing:
+        raise KeyError(
+            f"Bands {missing} not found under meta['{platform}']['bands']['wavelength']. "
+            f"Available band names: {available_bands}. Update BAND_NAMES in "
+            "src/clay_embed.py to match (and keep src/stac_utils.py:S2_BANDS in the same order)."
+        )
+
     wavelengths = [platform_meta["bands"]["wavelength"][b] for b in BAND_NAMES]
     means = [platform_meta["bands"]["mean"][b] for b in BAND_NAMES]
     stds = [platform_meta["bands"]["std"][b] for b in BAND_NAMES]
@@ -143,6 +167,17 @@ def encode_batch(model, chips_norm, time_feats, latlon_feats, wavelengths, devic
         "waves": wavelengths.to(device),
         "gsd": torch.tensor(10.0, device=device),
     }
-    embeddings, *_ = model.model.encoder(datacube)
+
+    encoder = getattr(getattr(model, "model", model), "encoder", None)
+    if encoder is None:
+        raise AttributeError(
+            "Could not find an .encoder on model.model or model directly. "
+            "Run `print([n for n, _ in model.named_children()])` (and same on "
+            "model.model if it exists) to see the real attribute names, then "
+            "update encode_batch() in src/clay_embed.py."
+        )
+
+    output = encoder(datacube)
+    embeddings = output[0] if isinstance(output, (tuple, list)) else output
     patch_tokens = embeddings[:, 1:, :]  # drop class token
     return patch_tokens.mean(dim=1).cpu().numpy()
