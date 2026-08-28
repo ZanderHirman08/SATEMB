@@ -50,7 +50,14 @@ embedding space is capturing anything real, these should end up visually and num
    component (extended past the top 3 examined in notebook 03) or the embedding clusters
    correlate with terrain, which Clay never saw as an input. Reads directly from the committed
    `docs/data/` files, so it needs no GPU and no Colab Drive round-trip.
-6. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
+6. **[`05_fire_before_after.ipynb`](notebooks/05_fire_before_after.ipynb)** — a proper before/after
+   test of the inconclusive Marshall Fire result from notebook 03: fetches pre-fire, immediate
+   post-fire, and 2024 long-term single dates over a tight box around the actual burn area,
+   computes dNBR (an independent burn-severity index) per chip, embeds all three dates with Clay,
+   and checks whether embedding movement correlates with actual burn severity — and whether that
+   correlation fades by 2024, which would explain notebook 03's null result as "signal faded,"
+   not "Clay never saw it." Small, self-contained AOI (~50 chips), no Drive round-trip needed.
+7. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
    committed `docs/data/` files, no Colab needed at all (e.g. `embedding_arithmetic.js`, a
    word2vec-style vector-arithmetic test — see the [Analysis Log](https://zanderhirman08.github.io/SATEMB/log.html)).
 
@@ -156,6 +163,9 @@ in Google Colab rather than on this machine.
 8. Optional, CPU-only: run `04_elevation_correlation.ipynb` afterward for the terrain-correlation
    follow-up. It reads directly from the just-committed `docs/data/` files, so no GPU or Drive
    round-trip is needed — a plain (non-GPU) Colab runtime is enough.
+9. Optional, needs GPU: run `05_fire_before_after.ipynb` for the Marshall Fire before/after test.
+   It's fully self-contained (own small AOI, own three STAC fetches) and doesn't touch
+   `docs/data/chips.geojson` — just commit the new `docs/figures/fire_*.png` files it writes.
 
 ## Repo layout
 

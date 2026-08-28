@@ -1,8 +1,9 @@
 """STAC search, signing, and chip-grid helpers for the Front Range imagery pipeline.
 
 Used by notebooks/01_fetch_and_chip.ipynb (Sentinel-2 L2A),
-notebooks/03_analyze_and_export.ipynb (ESA WorldCover, for validation), and
-notebooks/04_elevation_correlation.ipynb (USGS 3DEP elevation, for validation).
+notebooks/03_analyze_and_export.ipynb (ESA WorldCover, for validation),
+notebooks/04_elevation_correlation.ipynb (USGS 3DEP elevation, for validation),
+and notebooks/05_fire_before_after.ipynb (pre/post Marshall Fire comparison).
 """
 
 from __future__ import annotations
@@ -16,6 +17,11 @@ STAC_URL = "https://planetarycomputer.microsoft.com/api/stac/v1"
 # Boulder -> Denver, foothills -> plains, includes Boulder Reservoir and the
 # Dec-2021 Marshall Fire burn scar near Superior/Louisville, CO.
 FRONT_RANGE_BBOX = [-105.55, 39.55, -104.75, 40.25]
+
+# Tight box around the Marshall Fire's actual burned extent (Marshall Mesa
+# through Superior to Louisville, CO), for notebook 05's before/after study --
+# small on purpose so a GPU embedding pass over 3 dates is fast and cheap.
+MARSHALL_FIRE_BBOX = [-105.25, 39.89, -105.02, 40.02]
 
 # Sentinel-2 bands Clay v1.5 was trained on for the "sentinel-2-l2a" platform,
 # in the order clay_embed.py expects. B01/B09/B10 are dropped (60m atmospheric
@@ -60,6 +66,28 @@ def search_sentinel2(
             "Try widening the date range or cloud-cover threshold."
         )
     return items
+
+
+def search_single_scene(
+    catalog: pystac_client.Client,
+    bbox: list[float],
+    datetime_range: str,
+    max_cloud_cover: float = 20.0,
+    label: str = "",
+):
+    """Return the single least-cloudy Sentinel-2 scene in a date range.
+
+    Unlike search_sentinel2() (used for the main study's multi-tile median
+    composite), notebook 05's before/after comparison wants one specific,
+    identifiable date per period rather than a blended composite -- blending
+    would blur exactly the snow/no-snow, burned/unburned distinction the
+    comparison depends on.
+    """
+    items = search_sentinel2(catalog, bbox=bbox, datetime_range=datetime_range, max_cloud_cover=max_cloud_cover)
+    best = min(items, key=lambda it: it.properties.get("eo:cloud_cover", 100))
+    tag = f"[{label}] " if label else ""
+    print(f"{tag}{best.id}  date={best.datetime.date()}  cloud_cover={best.properties.get('eo:cloud_cover'):.1f}%")
+    return best
 
 
 def search_worldcover(catalog: pystac_client.Client, bbox: list[float] = FRONT_RANGE_BBOX):
