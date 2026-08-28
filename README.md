@@ -1,6 +1,6 @@
 # Front Range Satellite Embeddings
 
-**Live map:** _fill in after enabling GitHub Pages —_ `https://<your-username>.github.io/<repo>/`
+**Live map:** _fill in after enabling GitHub Pages —_ `https://zanderhirman08.github.io/SATEMB/`
 
 An unsupervised, embedding-only map of the Colorado Front Range (Boulder → Denver), built to
 answer a specific question: **what does a satellite-imagery foundation model's embedding vector
@@ -65,7 +65,7 @@ in Google Colab rather than on this machine.
 1. Push this repo to GitHub (see below).
 2. Open each notebook directly from GitHub in Colab — no upload needed:
    ```
-   https://colab.research.google.com/github/<your-username>/<repo>/blob/main/notebooks/01_fetch_and_chip.ipynb
+   https://colab.research.google.com/github/ZanderHirman08/SATEMB/blob/main/notebooks/01_fetch_and_chip.ipynb
    ```
    (swap the filename for `02_generate_embeddings.ipynb`, then `03_analyze_and_export.ipynb`)
 3. In each notebook's first cell, set `REPO_URL` to your repo's clone URL.
