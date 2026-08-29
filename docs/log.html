@@ -355,6 +355,100 @@
         than just the honest caveat notebook 04 could offer on its own.
       </p>
     </section>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Does the fire signal survive if we stop averaging it away?</h2>
+      <p>
+        The Marshall Fire entry's clean negative (r = &minus;0.06 / &minus;0.01, dNBR vs.
+        whole-chip embedding shift) came with a leading suspect: mean-pooling a 2.24km chip's
+        ~700 patch tokens into one vector should dilute a burn scar that only covers part of the
+        chip &mdash; the same way one burnt strawberry doesn't make a blended smoothie taste
+        burnt. That's testable directly. Clay's encoder already computes a token per spatial
+        patch before the mean-pool happens, so a new
+        <a href="https://github.com/ZanderHirman08/SATEMB/blob/main/src/clay_embed.py" target="_blank" rel="noopener"><code>encode_batch_patches()</code></a>
+        returns those tokens unpooled, and this entry reruns the exact same AOI, dates, and dNBR
+        as the fire entry &mdash; but correlates burn severity against embedding shift per patch
+        instead of per chip.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">r = &minus;0.061</div><div class="label">reproduced chip-level baseline, pre &rarr; immediate (orig. &minus;0.06)</div></div>
+        <div class="metric"><div class="value">r = &minus;0.021</div><div class="label">reproduced chip-level baseline, pre &rarr; 2024 (orig. &minus;0.01)</div></div>
+      </div>
+
+      <p>
+        First check: rerunning this from scratch landed on 48 chips (49 in the original entry,
+        an immaterial one-chip difference) with r-values within 0.01 of the fire entry's numbers
+        &mdash; confirmation this rerun found equivalent scenes and dNBR, so the patch-level test
+        below is a fair comparison against the original result, not an artifact of a different
+        setup.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">r = &minus;0.030</div><div class="label">patch-level, pre &rarr; immediate (n = 9,408 patches, p = 0.004)</div></div>
+        <div class="metric"><div class="value">r = &minus;0.002</div><div class="label">patch-level, pre &rarr; 2024 (n = 9,408, p = 0.83)</div></div>
+      </div>
+
+      <p>
+        The dilution hypothesis doesn't survive contact with the data. Patch-level correlation
+        isn't meaningfully stronger than the chip-level baseline &mdash; if anything it's
+        <em>weaker</em> in magnitude (&minus;0.03 vs. &minus;0.06), and the one nominally
+        significant p-value is a sample-size artifact (n = 9,408 patches will flag almost any
+        non-zero slope as "significant"), not a meaningful effect. The most-burned chip in the
+        AOI makes this visually unambiguous: its dNBR map has an obvious hotspot exactly where
+        the fire burned, but its patch-level embedding-shift map looks like unstructured noise
+        with no relationship to it at all.
+      </p>
+
+      <figure>
+        <img src="figures/fire_patch_worst_chip_detail.png" alt="True color, dNBR, and patch embedding shift for the most-burned chip">
+        <figcaption>The single most-burned chip in the AOI. Left: true color, pre-fire. Middle: dNBR block-averaged to the patch grid &mdash; the burn scar is obvious. Right: patch-level embedding shift, same grid &mdash; no visible correspondence to the burn at all.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="figures/fire_patch_dnbr_vs_shift.png" alt="Scatter plots of patch-level dNBR against patch-level embedding shift">
+        <figcaption>Every patch across all 48 chips, dNBR vs. embedding shift. A dense, flat cloud &mdash; no trend, immediate or long-term.</figcaption>
+      </figure>
+
+      <p>
+        A secondary, geometry-light check told a different and genuinely surprising story. Rather
+        than trusting that patch tokens line up with the pixel grid in simple row-major order,
+        this just asks: within each chip, does its <em>single most-shifted</em> patch track that
+        chip's overall dNBR any better than the chip average did?
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">r = &minus;0.554</div><div class="label">max-patch shift vs. chip dNBR, pre &rarr; immediate (n = 48, p &lt; 0.0001)</div></div>
+        <div class="metric"><div class="value">r = &minus;0.520</div><div class="label">max-patch shift vs. chip dNBR, pre &rarr; 2024 (n = 48, p = 0.0002)</div></div>
+      </div>
+
+      <figure>
+        <img src="figures/fire_patch_vs_chip_comparison.png" alt="Bar chart comparing chip-level, patch-level, and max-patch correlations">
+        <figcaption>All three tests side by side. Chip-level and patch-level both sit near zero; max-patch is the one result with real magnitude &mdash; and it's negative.</figcaption>
+      </figure>
+
+      <p>
+        That's a strong, highly significant correlation &mdash; and it runs backwards from what
+        "Clay detects the fire" would predict: chips that burned <em>more</em> severely tend to
+        have a <em>smaller</em> maximum patch shift, not a larger one. Whatever's driving this,
+        it isn't the fire. One plausible read: heavily-burned chips may end up more spectrally
+        uniform after the fire (a burned area looks like a burned area everywhere within it), so
+        no single patch stands out from its neighbors, while low-dNBR chips keep whatever
+        naturally heterogeneous land cover they had — a stray patch of snow, water, or a
+        land-cover edge — capable of producing one big, fire-irrelevant patch-level swing between
+        a fall and a winter date. That's a real hypothesis this entry raises but doesn't test;
+        left as an open question rather than dressed up as a finding.
+      </p>
+
+      <p>
+        Net result: dilution was the wrong explanation. Averaging wasn't hiding a real signal
+        &mdash; at both chip and patch resolution, Clay's embeddings simply don't track this
+        fire's burn severity in this sample. The one place a strong correlation did show up runs
+        in the opposite direction from a burn signal and remains unexplained, which is a more
+        honest place to leave this than forcing a tidy resolution the data doesn't support.
+      </p>
+    </section>
   </div>
 </body>
 </html>

@@ -194,6 +194,19 @@ directly confirming that was a data-scarcity limitation, not a method limitation
 structure is real and transfers, but what any one PCA component "means" is landscape-relative —
 exactly the caveat the elevation entry could only guess at before this test existed.
 
+**Fourth follow-up: was the fire null result caused by averaging the signal away?**
+[`08_fire_patch_level.ipynb`](notebooks/08_fire_patch_level.ipynb) retested the Marshall Fire
+result at patch resolution instead of whole-chip mean-pooling, using a new
+`clay_embed.encode_batch_patches()`. The dilution hypothesis didn't hold up: patch-level
+correlation (r = −0.030, n = 9,408 patches) was no stronger than the reproduced chip-level
+baseline (r = −0.061) — if anything weaker — and the most-burned chip's patch-level shift map
+showed no visible correspondence to its own obvious dNBR hotspot. A secondary check did turn up
+a strong, highly significant correlation (r = −0.554, n = 48 chips) between a chip's dNBR and
+its single most-shifted patch — but in the wrong direction to be a burn signal (more burn →
+*smaller* max shift), and left unexplained rather than forced into a tidy story. Net result:
+averaging wasn't hiding a real signal here; Clay's embeddings just don't track this fire's burn
+severity at either resolution tested.
+
 ## Running it yourself
 
 This repo splits cleanly into "author locally, run in Colab": everything here is already

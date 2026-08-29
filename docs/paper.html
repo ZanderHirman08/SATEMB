@@ -94,17 +94,6 @@
       each test succeeded, where it did not, and quantifies the agreement or disagreement in each
       case rather than reporting only favorable outcomes.
     </p>
-    <p>
-      Section 2 reviews prior work on spectral indices, supervised classifiers, and self-supervised
-      foundation models for Earth observation, and situates this study relative to each. Section 3
-      describes the imagery acquisition, chip extraction, embedding generation, and evaluation
-      methodology in enough detail for independent reproduction. Section 4 reports the
-      quantitative results of each of the four tests. Section 5 interprets those results, compares
-      them to prior work, states the limitations of a single-region, single-checkpoint study, and
-      discusses broader impact. Section 6 concludes with a summary of findings and concrete
-      directions for future work.
-    </p>
-
     <h2 class="section-title">2. Background &amp; Related Work</h2>
 
     <h3 class="subsection-title">2.1 Hand-crafted spectral indices</h3>
@@ -551,16 +540,19 @@
       embedding volatility (forest clusters shift roughly two to three times more between summer
       and winter than grassland does). The embedding space exhibits partial, not full, linear
       compositionality (a vector-arithmetic query landing 0.123 cosine similarity points above an
-      all-chip baseline). Three supplementary tests, documented in full in the project's public
-      analysis log, extended these findings: embedding-shift measurements throughout this paper
+      all-chip baseline). Four supplementary tests, documented in full in the project's public
+      analysis log, extended these findings. Embedding-shift measurements throughout this paper
       reflect real image content rather than Clay's time-conditioning metadata (date-only shift
-      averaged 4% of a matched real-shift comparison); embedding movement showed no correlation
-      with independently measured Marshall Fire burn severity, suggesting this study's whole-chip
-      mean-pooling dilutes localized signal; and rerunning the full pipeline on a structurally
-      different landscape (Seattle, dominated by open water rather than terrain) reproduced
-      comparable structure quality (Adjusted Rand Index 0.250 versus 0.275) with a different
-      dominant-axis character, confirming embedding structure is real and reproducible in kind
-      across landscapes even where what any one component represents is landscape-specific.
+      averaged 4% of a matched real-shift comparison). Embedding movement showed no correlation
+      with independently measured Marshall Fire burn severity at either whole-chip or patch
+      resolution (r = &minus;0.03, n = 9,408 patches), ruling out mean-pooling as the cause and
+      instead surfacing an unexplained inverse relationship between burn severity and a chip's
+      single most-shifted patch (r = &minus;0.55).
+      Rerunning the full pipeline on a structurally different landscape (Seattle, dominated by
+      open water rather than terrain) reproduced comparable structure quality (Adjusted Rand Index
+      0.250 versus 0.275) with a different dominant-axis character, confirming embedding structure
+      is real and reproducible in kind across landscapes even where what any one component
+      represents is landscape-specific.
     </p>
     <p>
       Future work should test whether a multi-date composite spanning a full growing season
