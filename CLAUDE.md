@@ -25,8 +25,26 @@ what's actually been done most recently; this file won't stay current on its own
   in-memory cell content of an already-open tab. Always tell the user to close and reopen the
   notebook fresh from the `colab.research.google.com/github/...` link after any edit here.
 - Committing results back from Colab uses a GitHub personal access token stored as a Colab
-  Secret (`GITHUB_TOKEN`). The standard cell pattern is in git history (search for
-  "userdata.get('GITHUB_TOKEN')").
+  Secret (`GITHUB_TOKEN`, repo write access). Standard cell to add at the end of a notebook
+  (this snippet only exists here now — it was previously typed live in Colab each time and
+  never actually landed in a tracked file, so don't bother searching git history for it):
+  ```python
+  from google.colab import userdata
+
+  GITHUB_TOKEN = userdata.get("GITHUB_TOKEN")
+  GITHUB_USER = "ZanderHirman08"
+  REPO_NAME = "SATEMB"
+
+  !git config user.email "zander_hirman08@outlook.com"
+  !git config user.name "ZanderHirman08"
+
+  remote_url = f"https://{GITHUB_USER}:{GITHUB_TOKEN}@github.com/{GITHUB_USER}/{REPO_NAME}.git"
+
+  !git add docs/figures/<whatever_this_notebook_wrote>*.png
+  !git commit -m "..."
+  !git push {remote_url} main
+  ```
+  Never `print(remote_url)` or otherwise let it hit notebook output — it embeds the raw token.
 - Local dev preview: `.claude/launch.json` has a `docs-static-site` config (`npx serve docs -l
   8080`) for previewing the map/log/paper locally via the Browser pane tools.
 - The Browser pane in this environment does not composite frames unless actively displayed to
