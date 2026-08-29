@@ -155,6 +155,19 @@ correlation** with actual burn severity, immediately after the fire (r = −0.06
 fire severity at all in this sample, most likely because averaging a 2.24km chip's patch tokens
 dilutes a burn signal that only covers part of the chip.
 
+**Second follow-up: is that a metadata artifact, or real content change?** The fire study left
+one thing unresolved — chips with essentially no burn severity still showed a large baseline
+embedding shift, and it wasn't clear how much of that was genuine seasonal content vs. Clay's own
+time-conditioning input reacting to the date label alone.
+[`06_seasonal_stability.ipynb`](notebooks/06_seasonal_stability.ipynb) tests this directly: embed
+a chip's real pixels with its real date, then the *same pixels* again with a fake date, and
+compare. The answer is decisive — swapping only the date moves the embedding by **4%** of what a
+real summer-vs-winter comparison does (0.007 vs. 0.170 average shift, n=30). Embedding shift
+really is driven by pixel content, not metadata. The same notebook, run across all 725 chips,
+also found forest clusters are ~2–3× more seasonally volatile than grassland (elevation and
+NDVI both correlate with shift, r=0.55 and r=0.42) — a clean snow-line effect, and further
+confirmation the clusters track real physical geography rather than an artifact of clustering.
+
 ## Running it yourself
 
 This repo splits cleanly into "author locally, run in Colab": everything here is already

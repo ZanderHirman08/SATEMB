@@ -548,13 +548,21 @@
       structure in the embedding space agrees with independent ESA WorldCover land-cover labels
       well above chance (Adjusted Rand Index = 0.275) but unevenly: cleanly for built-up and
       tree-cover classes, weakly for cropland and grassland; the same clusters, built without any
-      elevation information, separate cleanly by independently sourced elevation as well. The
-      embedding space exhibits partial, not full, linear compositionality, with a vector-arithmetic
-      query landing 0.123 cosine similarity points above an all-chip baseline (0.951 versus 0.828).
-      Together these results indicate that a single openly available checkpoint, applied with only
-      free data and compute, produces structure that is real and independently verifiable, bounded
-      by specific, identifiable limits, and not always correctly characterized by its most obvious
-      correlate.
+      elevation information, separate cleanly by independently sourced elevation and by seasonal
+      embedding volatility (forest clusters shift roughly two to three times more between summer
+      and winter than grassland does). The embedding space exhibits partial, not full, linear
+      compositionality (a vector-arithmetic query landing 0.123 cosine similarity points above an
+      all-chip baseline), and a supplementary ablation found embedding-shift measurements
+      throughout this paper reflect real image content rather than an artifact of Clay's
+      time-conditioning input (date-only shift averaged 4% of a matched real-shift comparison). A
+      further supplementary test found no correlation between embedding movement and independently
+      measured Marshall Fire burn severity (r = &minus;0.06 immediately post-fire, r = &minus;0.01
+      by 2024), suggesting this study's whole-chip mean-pooling (Section 3.3) dilutes localized
+      burn signal. Together these results indicate that a single openly available checkpoint,
+      applied with only free data and compute, produces structure that is real, independently
+      verifiable, and driven by image content, bounded by specific, identifiable limits rather
+      than uniform reliability. Full methodology for both supplementary tests is documented in the
+      project's public analysis log, linked from the repository.
     </p>
     <p>
       Future work should test whether a multi-date composite spanning a full growing season
@@ -562,14 +570,7 @@
       compositionality gap reported in Table 3 narrows or widens when concept anchors are built
       from manually verified single chips rather than cluster means, and whether the elevation
       correlation reported in Table 4 persists in a second study area where elevation and land
-      cover are not mutually confounded. A paired pre/post-event comparison for the Marshall Fire,
-      proposed as future work in an earlier draft, has since been run on a smaller supplementary
-      AOI outside this paper's main pipeline: against independently computed dNBR ground truth,
-      embedding movement showed no correlation with burn severity immediately after the fire
-      (r = &minus;0.06) or by 2024 (r = &minus;0.01), suggesting the whole-chip mean-pooling used
-      throughout this study (Section 3.3) dilutes localized burn signal rather than the signal
-      fading over time. Full methodology is documented in the project's public analysis log,
-      linked from the repository.
+      cover are not mutually confounded.
     </p>
 
     <h2 class="section-title">References</h2>

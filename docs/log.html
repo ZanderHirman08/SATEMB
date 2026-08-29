@@ -218,6 +218,74 @@
         <figcaption>dNBR (independently-measured burn severity) against embedding shift, for the immediate post-fire comparison (left) and the 2024 long-term comparison (right). Flat in both &mdash; no visible trend.</figcaption>
       </figure>
     </section>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Seasonal stability, and a direct answer to the previous entry's open question</h2>
+      <p>
+        The fire study left something unresolved: chips with essentially zero burn severity still
+        showed a large embedding shift between dates, and it wasn't clear how much of that was
+        real seasonal content change versus Clay's own time-conditioning input reacting to the
+        date label regardless of pixel content. This entry fetches a winter mosaic
+        (Dec 2023&ndash;Feb 2024) over the <em>same</em> 725-chip AOI and grid as the main study,
+        embeds it, and tests both questions directly &mdash; reusing
+        <code>docs/data/embeddings.bin</code> as the summer baseline, no re-embedding needed.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">0.159</div><div class="label">mean seasonal shift across all 725 chips (std 0.079)</div></div>
+        <div class="metric"><div class="value">r = 0.55</div><div class="label">shift vs. elevation</div></div>
+        <div class="metric"><div class="value">r = 0.42</div><div class="label">shift vs. NDVI</div></div>
+      </div>
+
+      <p>
+        Forest clusters are by far the most seasonally volatile: cluster 4 (shift 0.300) and
+        cluster 1 (0.286) &mdash; both confirmed tree-cover-dominant in the first entry &mdash;
+        sit roughly double the AOI-wide mean. The most <em>stable</em> cluster is grassland
+        (cluster 5, 0.096), not built-up as expected going in: pure built-up (cluster 6) actually
+        lands mid-pack at 0.170, a little above the overall mean. A plausible read: Front Range
+        grassland is already fairly brown and dry most of the year in this semi-arid climate, so
+        it has less of a "green-to-brown" swing to make, while dense urban chips still carry
+        enough street trees and low winter sun angles (long shadows in a way summer's high sun
+        never produces) to shift more than raw intuition would suggest.
+      </p>
+
+      <figure>
+        <img src="figures/seasonal_shift_by_cluster.png" alt="Mean seasonal shift per embedding cluster">
+        <figcaption>Mean summer&rarr;winter embedding shift per cluster. Tree-cover clusters (1, 4) move roughly 2&ndash;3&times; as much as grassland (5), the most stable cluster measured.</figcaption>
+      </figure>
+
+      <p>
+        Elevation and NDVI both correlate positively with shift (r = 0.55 and r = 0.42), and
+        together with the cluster pattern above, the story lines up: this is a snow-line effect.
+        Higher, more forested chips get buried in snow and change dramatically in appearance;
+        low-elevation grassland barely does.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">4%</div><div class="label">date-metadata-only shift, as a share of the real total shift</div></div>
+      </div>
+
+      <p>
+        The ablation answers the previous entry's question cleanly. Re-embedding 30 winter chips
+        with their real winter date gives a real total shift of 0.170 on average against the
+        summer baseline. Re-embedding the <em>same pixels</em> with a fake summer date instead of
+        the real winter one produces a shift of only 0.007 &mdash; 4% of the real figure, and flat
+        across the entire sample regardless of how large the real shift was for that chip
+        (Figure below). Clay's embeddings move because of what's actually in the image, not
+        because of what date it's told the image is from. That's a meaningfully more solid
+        foundation for every "embedding shift" claim made anywhere else in this project &mdash;
+        including the fire study two entries back, whose unusually large baseline shift (0.6&ndash;0.9
+        for chips with essentially no burn) now looks less like a metadata artifact and more like
+        it belongs to that specific small AOI or that particular date pair, not a general property
+        of Clay's conditioning. Worth another look, but not urgent.
+      </p>
+
+      <figure>
+        <img src="figures/seasonal_ablation.png" alt="Scatter plot comparing real total shift to date-metadata-only shift">
+        <figcaption>Real total shift (x-axis) against date-metadata-only shift (y-axis, same pixels, fake date) for 30 sampled chips. Every point sits far below the y=x line &mdash; date-swapping alone barely moves the embedding no matter how much the real comparison does.</figcaption>
+      </figure>
+    </section>
   </div>
 </body>
 </html>
