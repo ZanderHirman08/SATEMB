@@ -286,6 +286,75 @@
         <figcaption>Real total shift (x-axis) against date-metadata-only shift (y-axis, same pixels, fake date) for 30 sampled chips. Every point sits far below the y=x line &mdash; date-swapping alone barely moves the embedding no matter how much the real comparison does.</figcaption>
       </figure>
     </section>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Does any of this generalize past the Front Range?</h2>
+      <p>
+        Every finding so far comes from one semi-arid Colorado landscape where elevation, land
+        cover, and development are all confounded with each other &mdash; exactly the limitation
+        the elevation entry couldn't fully resolve on its own. This entry re-runs the whole
+        pipeline (fetch, chip, embed, PCA, cluster-vs-WorldCover, elevation correlation) on
+        Seattle/Puget Sound, WA: marine climate, year-round evergreen forest, real open water at
+        scale, and a much smaller elevation range within the AOI (0&ndash;329m vs. the Front
+        Range's 1,455&ndash;3,253m).
+      </p>
+
+      <figure>
+        <img src="figures/seattle_true_color.png" alt="True-color Sentinel-2 mosaic of Seattle and Puget Sound">
+        <figcaption>The Seattle study area: Puget Sound (upper left), Lake Washington (right), downtown Seattle and Bellevue, forested surroundings. 240 chips survived the nodata filter, versus 725 for the Front Range.</figcaption>
+      </figure>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">0.250</div><div class="label">Adjusted Rand Index vs. WorldCover (Front Range: 0.275)</div></div>
+        <div class="metric"><div class="value">84.8%</div><div class="label">PC1 variance explained (Front Range: 59.4%)</div></div>
+        <div class="metric"><div class="value">r = 0.92</div><div class="label">Seattle PC1 vs. NDWI (water) &mdash; its strongest correlate by far</div></div>
+      </div>
+
+      <p>
+        The headline: overall structure quality <em>transfers</em> almost exactly (ARI 0.250 vs.
+        0.275), but the dominant axis's <em>character</em> completely changes. In Colorado, PC1
+        turned out to be more fundamentally about terrain than development (Entry 2). In Seattle,
+        PC1 is even more concentrated (84.8% of variance, versus 59.4%) and is overwhelmingly a
+        <strong>water</strong> axis &mdash; r = 0.92 with NDWI, dwarfing its correlation with NDVI
+        (&minus;0.88) or NDBI (0.66). That's the single strongest index correlation measured
+        anywhere in this project. Elevation still correlates moderately (r = &minus;0.68, against
+        &minus;0.82 in Colorado) despite a relief range 82% smaller &mdash; though here that's
+        likely substantially a water-versus-land proxy (water sits at 0m, everything else doesn't)
+        rather than the smooth mountains-to-plains gradient driving Colorado's number. Put simply:
+        PC1 isn't a fixed "elevation axis" or "water axis" baked into the model &mdash; PCA finds
+        whichever single contrast dominates variance in <em>this specific landscape</em>, and that
+        changes with the landscape. Terrain in a landscape defined by a mountain range, water in a
+        landscape defined by a sound and a lake.
+      </p>
+
+      <figure>
+        <img src="figures/seattle_pca_semantic_map.png" alt="PCA-projected semantic map of Seattle and Puget Sound">
+        <figcaption>Seattle chips colored by PCA-projected embedding, same method as the Front Range map. Blue tones track open water (Puget Sound, upper left; Lake Washington, right), green tracks forest, warm tones track the urban core &mdash; visibly different color logic from the Colorado map, built from the same three-line PCA recipe.</figcaption>
+      </figure>
+
+      <p>
+        The clustering result closes a loop from two entries back: the Front Range never grew a
+        dedicated water cluster because it barely had any water (one small reservoir). Seattle,
+        with Puget Sound and Lake Washington actually in frame, produced <strong>three</strong>
+        water-dominant clusters out of eight, alongside a tree-cover cluster even more concentrated
+        than Colorado's (44 chips, essentially none of any other class). That was a data-scarcity
+        limitation, not a limitation of the method.
+      </p>
+
+      <figure>
+        <img src="figures/seattle_cluster_vs_worldcover.png" alt="Confusion matrix of Seattle embedding clusters against WorldCover classes">
+        <figcaption>Seattle embedding clusters vs. ESA WorldCover class (ARI = 0.250). Three clusters (0, 3, 6) are water-dominant; cluster 4 is an almost-pure tree-cover cluster of 44 chips. Only four WorldCover classes appear at all in this AOI, versus six in the Front Range &mdash; no meaningful cropland or bare ground in a Seattle metro box.</figcaption>
+      </figure>
+
+      <p>
+        Net read: this project's core claims hold up somewhere structurally different &mdash;
+        real, independently-verifiable structure (ARI in the same range, clean cluster-to-class
+        agreement) &mdash; while the specific story about <em>what any one component means</em>
+        was always going to be landscape-relative, and now there's direct evidence of that rather
+        than just the honest caveat notebook 04 could offer on its own.
+      </p>
+    </section>
   </div>
 </body>
 </html>

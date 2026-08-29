@@ -174,6 +174,19 @@ also found forest clusters are ~2–3× more seasonally volatile than grassland 
 NDVI both correlate with shift, r=0.55 and r=0.42) — a clean snow-line effect, and further
 confirmation the clusters track real physical geography rather than an artifact of clustering.
 
+**Third follow-up: does any of this generalize past Colorado?**
+[`07_cross_region_seattle.ipynb`](notebooks/07_cross_region_seattle.ipynb) reruns the entire
+pipeline on Seattle/Puget Sound — a deliberately different landscape (marine climate, real open
+water at scale, a much smaller elevation range). Overall structure quality transfers almost
+exactly: Adjusted Rand Index vs. WorldCover of **0.250** (Front Range: 0.275). But the dominant
+axis's *character* completely changes — Seattle's PC1 is even more concentrated (84.8% of
+variance) and is overwhelmingly a **water** axis (r=0.92 with NDWI, the strongest single
+correlation found anywhere in this project), not a terrain axis like Colorado's. And where the
+Front Range never grew a water cluster (too little water to cluster on), Seattle produced three,
+directly confirming that was a data-scarcity limitation, not a method limitation. Net result: the
+structure is real and transfers, but what any one PCA component "means" is landscape-relative —
+exactly the caveat the elevation entry could only guess at before this test existed.
+
 ## Running it yourself
 
 This repo splits cleanly into "author locally, run in Colab": everything here is already

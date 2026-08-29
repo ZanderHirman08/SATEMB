@@ -24,25 +24,24 @@
         Self-supervised foundation models for satellite imagery are increasingly proposed as
         general-purpose replacements for task-specific remote-sensing classifiers, yet few openly
         reproducible studies test whether a specific released checkpoint produces embeddings that
-        are both interpretable and independently accurate for a given landscape. This study
-        addressed that gap using Clay v1.5, an openly released masked-autoencoder foundation
-        model, applied to 725 chips of Sentinel-2 imagery spanning the Boulder-to-Denver Front
-        Range of Colorado, United States. Each 224-by-224-pixel chip was encoded into a
-        1,024-dimensional embedding, then analyzed with principal component analysis, correlation
-        against hand-computed spectral indices and independently sourced elevation and slope,
-        k-means clustering validated against the independent ESA WorldCover land-cover product,
-        and a vector-arithmetic compositionality test. The dominant embedding axis explained 59.4%
-        of variance and correlated with elevation (r = &minus;0.82) more strongly than with
-        built-up-ness (r = 0.61) or vegetation (r = &minus;0.55), suggesting the axis is more
-        fundamentally terrain-related than development-related on this landscape, while a later
-        component explaining only 6.2% of variance correlated more strongly with vegetation
-        (r = &minus;0.73) than the dominant axis did. Unsupervised clusters agreed with independent
-        WorldCover labels at an Adjusted Rand Index of 0.275, separating cleanly by both land
-        cover and, independently, by elevation. A vector-arithmetic query (urban minus vegetation
-        plus water) returned a nearest match at 0.951 cosine similarity against an 0.828 mean
-        baseline,
-        indicating partial linear compositionality. These results show that a single openly
-        released foundation-model checkpoint can produce embeddings with measurable, interpretable
+        are both interpretable and independently accurate. This study addressed that gap using
+        Clay v1.5, an openly released masked-autoencoder foundation model, applied to 725 chips of
+        Sentinel-2 imagery over Colorado's Front Range, analyzed with principal component
+        analysis, correlation against spectral indices and independently sourced elevation,
+        k-means clustering validated against ESA WorldCover, and a vector-arithmetic
+        compositionality test. The dominant embedding axis explained 59.4% of variance and
+        correlated with elevation (r = &minus;0.82) more strongly than with built-up-ness
+        (r = 0.61) or vegetation (r = &minus;0.55), indicating it is more fundamentally
+        terrain-related than development-related on this landscape, while a later component
+        explaining only 6.2% of variance was a cleaner vegetation signal (r = &minus;0.73) than the
+        dominant axis. Unsupervised clusters agreed with WorldCover at an Adjusted Rand Index of
+        0.275, and a vector-arithmetic query indicated partial linear compositionality (0.951
+        cosine similarity against an 0.828 baseline). Repeating the full pipeline on a
+        structurally different landscape (Seattle, Washington) reproduced comparable structure
+        quality (Adjusted Rand Index 0.250) while its dominant axis instead tracked open water
+        (r = 0.92) rather than terrain, indicating embedding structure is landscape-dependent even
+        where its existence is not. These results show that a single openly released
+        foundation-model checkpoint can produce embeddings with measurable, interpretable
         structure using only free data and tooling, while also showing precisely where that
         structure breaks down and where its most-apparent interpretation can be misleading.
       </p>
@@ -552,25 +551,22 @@
       embedding volatility (forest clusters shift roughly two to three times more between summer
       and winter than grassland does). The embedding space exhibits partial, not full, linear
       compositionality (a vector-arithmetic query landing 0.123 cosine similarity points above an
-      all-chip baseline), and a supplementary ablation found embedding-shift measurements
-      throughout this paper reflect real image content rather than an artifact of Clay's
-      time-conditioning input (date-only shift averaged 4% of a matched real-shift comparison). A
-      further supplementary test found no correlation between embedding movement and independently
-      measured Marshall Fire burn severity (r = &minus;0.06 immediately post-fire, r = &minus;0.01
-      by 2024), suggesting this study's whole-chip mean-pooling (Section 3.3) dilutes localized
-      burn signal. Together these results indicate that a single openly available checkpoint,
-      applied with only free data and compute, produces structure that is real, independently
-      verifiable, and driven by image content, bounded by specific, identifiable limits rather
-      than uniform reliability. Full methodology for both supplementary tests is documented in the
-      project's public analysis log, linked from the repository.
+      all-chip baseline). Three supplementary tests, documented in full in the project's public
+      analysis log, extended these findings: embedding-shift measurements throughout this paper
+      reflect real image content rather than Clay's time-conditioning metadata (date-only shift
+      averaged 4% of a matched real-shift comparison); embedding movement showed no correlation
+      with independently measured Marshall Fire burn severity, suggesting this study's whole-chip
+      mean-pooling dilutes localized signal; and rerunning the full pipeline on a structurally
+      different landscape (Seattle, dominated by open water rather than terrain) reproduced
+      comparable structure quality (Adjusted Rand Index 0.250 versus 0.275) with a different
+      dominant-axis character, confirming embedding structure is real and reproducible in kind
+      across landscapes even where what any one component represents is landscape-specific.
     </p>
     <p>
       Future work should test whether a multi-date composite spanning a full growing season
-      resolves the cropland-grassland confusion observed in Table 1, whether the vector-arithmetic
-      compositionality gap reported in Table 3 narrows or widens when concept anchors are built
-      from manually verified single chips rather than cluster means, and whether the elevation
-      correlation reported in Table 4 persists in a second study area where elevation and land
-      cover are not mutually confounded.
+      resolves the cropland-grassland confusion observed in Table 1, and whether the
+      vector-arithmetic compositionality gap reported in Table 3 narrows or widens when concept
+      anchors are built from manually verified single chips rather than cluster means.
     </p>
 
     <h2 class="section-title">References</h2>
