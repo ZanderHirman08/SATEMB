@@ -160,13 +160,12 @@ def make_time_latlon_tensors(dates, lats, lons) -> tuple[torch.Tensor, torch.Ten
 
 
 @torch.no_grad()
-def encode_batch(model, chips_norm, time_feats, latlon_feats, wavelengths, device: str = "cuda"):
-    """Run one batch through Clay's encoder and return (batch, embed_dim) embeddings.
+def _encode_batch_patch_tokens(model, chips_norm, time_feats, latlon_feats, wavelengths, device: str):
+    """Shared internals: run one batch through Clay's encoder and return the raw
+    (batch, n_patches, embed_dim) patch tokens, class token already dropped.
 
-    Clay's encoder returns patch tokens plus a class token; we take the mean
-    over patch tokens (excluding the class token) as the whole-chip embedding
-    -- a standard choice for downstream similarity/clustering use, though the
-    class token alone is a reasonable alternative worth comparing in notebook 03.
+    Both encode_batch() (whole-chip mean) and encode_batch_patches() (unpooled,
+    for sub-chip-resolution experiments like notebook 08) build on this.
     """
     datacube = {
         "pixels": chips_norm.to(device),
@@ -182,10 +181,37 @@ def encode_batch(model, chips_norm, time_feats, latlon_feats, wavelengths, devic
             "Could not find an .encoder on model.model or model directly. "
             "Run `print([n for n, _ in model.named_children()])` (and same on "
             "model.model if it exists) to see the real attribute names, then "
-            "update encode_batch() in src/clay_embed.py."
+            "update _encode_batch_patch_tokens() in src/clay_embed.py."
         )
 
     output = encoder(datacube)
     embeddings = output[0] if isinstance(output, (tuple, list)) else output
-    patch_tokens = embeddings[:, 1:, :]  # drop class token
+    return embeddings[:, 1:, :]  # drop class token
+
+
+@torch.no_grad()
+def encode_batch(model, chips_norm, time_feats, latlon_feats, wavelengths, device: str = "cuda"):
+    """Run one batch through Clay's encoder and return (batch, embed_dim) embeddings.
+
+    Clay's encoder returns patch tokens plus a class token; we take the mean
+    over patch tokens (excluding the class token) as the whole-chip embedding
+    -- a standard choice for downstream similarity/clustering use, though the
+    class token alone is a reasonable alternative worth comparing in notebook 03.
+    """
+    patch_tokens = _encode_batch_patch_tokens(model, chips_norm, time_feats, latlon_feats, wavelengths, device)
     return patch_tokens.mean(dim=1).cpu().numpy()
+
+
+@torch.no_grad()
+def encode_batch_patches(model, chips_norm, time_feats, latlon_feats, wavelengths, device: str = "cuda"):
+    """Run one batch through Clay's encoder and return (batch, n_patches, embed_dim)
+    patch tokens, unpooled.
+
+    Notebook 05 found that whole-chip mean-pooled embeddings don't track burn
+    severity at all. The leading hypothesis: averaging a 2.24km chip's ~700+
+    patch tokens into one vector dilutes a burn scar that only covers part of
+    the chip. This returns the tokens before that averaging step, so notebook
+    08 can test the burn-severity correlation at patch resolution instead.
+    """
+    patch_tokens = _encode_batch_patch_tokens(model, chips_norm, time_feats, latlon_feats, wavelengths, device)
+    return patch_tokens.cpu().numpy()

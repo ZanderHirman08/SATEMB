@@ -70,7 +70,14 @@ embedding space is capturing anything real, these should end up visually and num
    findings are real structure or an artifact of one confounded landscape. Same free data sources,
    different biome, climate, and elevation range — self-contained, own AOI, doesn't touch
    `docs/data/chips.geojson`.
-9. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
+9. **[`08_fire_patch_level.ipynb`](notebooks/08_fire_patch_level.ipynb)** — tests the leading
+   explanation for notebook 05's clean negative result: does mean-pooling a 2.24km chip's patch
+   tokens into one vector dilute a burn scar that only covers part of the chip? Reruns the exact
+   same Marshall Fire AOI/dates/dNBR as notebook 05, but embeds at **patch resolution** using a
+   new `clay_embed.encode_batch_patches()` and correlates burn severity against embedding shift
+   per patch instead of per chip — tens of thousands of data points instead of ~50, plus a
+   geometry-light max-shifted-patch check as a second angle on the same question.
+10. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
    committed `docs/data/` files, no Colab needed at all (e.g. `embedding_arithmetic.js`, a
    word2vec-style vector-arithmetic test — see the [Analysis Log](https://zanderhirman08.github.io/SATEMB/log.html)).
 
@@ -223,6 +230,10 @@ in Google Colab rather than on this machine.
 11. Optional, needs GPU: run `07_cross_region_seattle.ipynb` for the cross-region generalization
     check. Fully self-contained (own AOI, own fetches, own everything), doesn't touch
     `docs/data/chips.geojson` — just commit the new `docs/figures/seattle_*.png` files.
+12. Optional, needs GPU: run `08_fire_patch_level.ipynb` for the patch-level retest of notebook
+    05's fire result. Fully self-contained (reruns the same small Marshall Fire AOI/dates as
+    notebook 05, own fetches), doesn't touch `docs/data/chips.geojson` — just commit the new
+    `docs/figures/fire_patch_*.png` files.
 
 ## Repo layout
 
