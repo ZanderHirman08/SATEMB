@@ -3,7 +3,8 @@
 Used by notebooks/01_fetch_and_chip.ipynb (Sentinel-2 L2A),
 notebooks/03_analyze_and_export.ipynb (ESA WorldCover, for validation),
 notebooks/04_elevation_correlation.ipynb (USGS 3DEP elevation, for validation),
-and notebooks/05_fire_before_after.ipynb (pre/post Marshall Fire comparison).
+notebooks/05_fire_before_after.ipynb (pre/post Marshall Fire comparison), and
+notebooks/06_seasonal_stability.ipynb (summer-vs-winter embedding comparison).
 """
 
 from __future__ import annotations
@@ -139,6 +140,29 @@ def select_clearest_scene(
 
     print(f"{tag}selected {best_item.id}  date={best_item.datetime.date()}  AOI cloud+snow fraction={best_frac * 100:.1f}%")
     return best_item
+
+
+def select_least_cloudy_per_tile(items):
+    """Group items by Sentinel-2 MGRS tile and return the least-cloudy item
+    from each tile, so a multi-tile AOI gets full coverage instead of
+    multiple scenes from one tile while another tile goes unpicked (the same
+    fix applied to notebook 01's original AOI coverage bug). Snow is left in
+    deliberately where relevant (e.g. notebook 06's seasonal comparison) --
+    unlike select_clearest_scene(), this does not filter it out.
+    """
+    from collections import defaultdict
+
+    by_tile = defaultdict(list)
+    for it in items:
+        tile = it.properties.get("s2:mgrs_tile", "unknown")
+        by_tile[tile].append(it)
+
+    selected = []
+    for tile, tile_items in sorted(by_tile.items()):
+        best = min(tile_items, key=lambda it: it.properties.get("eo:cloud_cover", 100))
+        selected.append(best)
+        print(f"  tile {tile}: {best.id}  cloud_cover={best.properties.get('eo:cloud_cover'):.1f}%  date={best.datetime.date()}")
+    return selected
 
 
 def search_worldcover(catalog: pystac_client.Client, bbox: list[float] = FRONT_RANGE_BBOX):

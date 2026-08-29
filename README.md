@@ -57,7 +57,14 @@ embedding space is capturing anything real, these should end up visually and num
    and checks whether embedding movement correlates with actual burn severity — and whether that
    correlation fades by 2024, which would explain notebook 03's null result as "signal faded,"
    not "Clay never saw it." Small, self-contained AOI (~50 chips), no Drive round-trip needed.
-7. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
+7. **[`06_seasonal_stability.ipynb`](notebooks/06_seasonal_stability.ipynb)** — fetches a winter
+   mosaic over the *same* 725-chip AOI and grid as the main study, embeds it with Clay, and
+   measures how far each chip's embedding moves between summer and winter — which clusters/land
+   cover are seasonally stable vs. volatile — plus a targeted ablation testing notebook 05's open
+   question directly: re-embeds a sample of chips with identical pixels but a swapped date, to
+   separate how much embedding movement comes from real seasonal content vs. Clay's own
+   date-conditioning input. Reuses `docs/data/embeddings.bin` as the summer baseline directly.
+8. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
    committed `docs/data/` files, no Colab needed at all (e.g. `embedding_arithmetic.js`, a
    word2vec-style vector-arithmetic test — see the [Analysis Log](https://zanderhirman08.github.io/SATEMB/log.html)).
 
@@ -177,6 +184,10 @@ in Google Colab rather than on this machine.
 9. Optional, needs GPU: run `05_fire_before_after.ipynb` for the Marshall Fire before/after test.
    It's fully self-contained (own small AOI, own three STAC fetches) and doesn't touch
    `docs/data/chips.geojson` — just commit the new `docs/figures/fire_*.png` files it writes.
+10. Optional, needs GPU: run `06_seasonal_stability.ipynb` for the summer-vs-winter comparison. It
+    reuses `docs/data/embeddings.bin` as the summer baseline directly (no Drive round-trip) and
+    adds a new `seasonal_shift` property onto `docs/data/chips.geojson` — commit that plus the new
+    `docs/figures/seasonal_*.png` files.
 
 ## Repo layout
 
