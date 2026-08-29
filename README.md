@@ -137,6 +137,17 @@ or "this particular chip missed the scar" is exactly the kind of question this m
 but can't answer by itself — a real limitation of a single 2.24km-chip, single-date snapshot, not
 a marketing footnote.
 
+**Follow-up: that open question got a real answer, and it's a clean negative.**
+[`05_fire_before_after.ipynb`](notebooks/05_fire_before_after.ipynb) did the proper before/after
+test — real pre-fire and post-fire dates, dNBR (an independent burn-severity index) as ground
+truth, embedding shift measured directly. After two failed attempts at picking clean dates
+(season mismatch, then undetected snow — see the [Analysis Log](https://zanderhirman08.github.io/SATEMB/log.html)
+for the full debugging story), the properly controlled result: embedding shift shows **no
+correlation** with actual burn severity, immediately after the fire (r = −0.06) or by 2024
+(r = −0.01). Not "the signal faded" — a whole-chip mean-pooled embedding doesn't appear to track
+fire severity at all in this sample, most likely because averaging a 2.24km chip's patch tokens
+dilutes a burn signal that only covers part of the chip.
+
 ## Running it yourself
 
 This repo splits cleanly into "author locally, run in Colab": everything here is already

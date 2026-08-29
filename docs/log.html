@@ -156,6 +156,68 @@
         <figcaption>Mean elevation per k-means cluster (clusters were built with zero elevation information). The three forest-dominant clusters from the first entry (1, 4, 7) sit at 2,241&ndash;2,742m; the five built-up/cropland/grassland-dominant clusters (0, 2, 3, 5, 6) sit at 1,533&ndash;1,772m &mdash; a clean, independently-confirmed split.</figcaption>
       </figure>
     </section>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Does Clay actually detect the Marshall Fire? (Took three tries to ask cleanly.)</h2>
+      <p>
+        The first entry's nearest-neighbor query aimed at the burn scar was inconclusive &mdash;
+        it used one snapshot from mid-2024, ~2.5 years after the fire, no baseline. This was meant
+        to be the fix: fetch a real pre-fire and post-fire pair, compute dNBR (a standard,
+        independent burn-severity index) from the raw bands as ground truth, embed both dates with
+        Clay, and check whether embedding movement actually tracks how severely each chip burned.
+        Getting a clean pair of dates took two failed attempts first, both worth stating plainly
+        rather than editing out.
+      </p>
+      <p>
+        <strong>Attempt 1</strong> searched a wide pre-fire window (Sept&ndash;Dec 2021) for the
+        least-cloudy scene and got Sept 25 &mdash; three months before the fire. Compared against
+        an April 2022 post-fire scene, that's late-summer-green versus early-spring-dormant
+        vegetation, a seasonal swing large enough to swamp any real burn signal. It showed up
+        exactly as you'd expect: dNBR elevated almost uniformly across the <em>entire</em> AOI
+        rather than concentrated at the actual burn perimeter.
+        <strong>Attempt 2</strong> narrowed the window to December 2021 pre-fire, but the
+        resulting "least cloudy" February 2022 scene turned out to have obvious patchy snow
+        visible in the true-color check &mdash; `eo:cloud_cover` metadata doesn't account for snow
+        at all, so a metadata-only search can't catch it. The real fix
+        (<a href="https://github.com/ZanderHirman08/SATEMB/blob/main/src/stac_utils.py" target="_blank" rel="noopener"><code>select_clearest_scene()</code></a>)
+        reads each candidate's actual Scene Classification Layer band over the specific AOI and
+        picks whichever has the lowest real cloud+snow pixel fraction, not the scene-wide metadata
+        number.
+      </p>
+
+      <figure>
+        <img src="figures/fire_true_color_dates.png" alt="True-color imagery: pre-fire, immediate post-fire, and 2024 long-term">
+        <figcaption>The clean date triple that finally worked: Dec 4, 2021 (pre-fire) &middot; Mar 14, 2022 (immediate post-fire, visible darker burn scar left-of-center along the highway) &middot; Jun 6, 2024 (long-term).</figcaption>
+      </figure>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">r = &minus;0.06</div><div class="label">dNBR vs. embedding shift, pre &rarr; immediate post-fire</div></div>
+        <div class="metric"><div class="value">r = &minus;0.01</div><div class="label">dNBR vs. embedding shift, pre &rarr; 2024 long-term</div></div>
+      </div>
+
+      <p>
+        With the confounds actually gone, the answer is a real negative, not a shrug: embedding
+        shift shows <strong>no relationship</strong> with independently-measured burn severity, at
+        either time offset. This is a stronger and more useful result than the first entry's
+        inconclusive one &mdash; it's not "the signal faded by 2024," it's "a whole-chip,
+        mean-pooled embedding doesn't track dNBR-scale burn severity even immediately after the
+        fire, in this sample." The most likely reason: this study pools each 2.24km chip's patch
+        tokens into a single mean vector (Methodology, all notebooks), which would dilute a burn
+        signal that only covers part of a chip's footprint. It's also possible Clay's explicit
+        time-conditioning input shifts embeddings by date somewhat independent of pixel content
+        &mdash; every chip, burned or not, shows a large baseline shift (dNBR near zero still
+        pairs with embedding shift around 0.6&ndash;0.9) &mdash; which would add noise that a
+        49-chip sample isn't large enough to see through. Worth testing directly: embed the same
+        pixels twice with only the date metadata changed, to see how much shift that alone
+        produces.
+      </p>
+
+      <figure>
+        <img src="figures/fire_dnbr_vs_shift.png" alt="Scatter plots of dNBR against embedding shift, immediate and long-term">
+        <figcaption>dNBR (independently-measured burn severity) against embedding shift, for the immediate post-fire comparison (left) and the 2024 long-term comparison (right). Flat in both &mdash; no visible trend.</figcaption>
+      </figure>
+    </section>
   </div>
 </body>
 </html>
