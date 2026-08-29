@@ -76,10 +76,23 @@ embedding space is capturing anything real, these should end up visually and num
    same Marshall Fire AOI/dates/dNBR as notebook 05, but embeds at **patch resolution** using a
    new `clay_embed.encode_batch_patches()` and correlates burn severity against embedding shift
    per patch instead of per chip — tens of thousands of data points instead of ~50, plus a
-   geometry-light max-shifted-patch check as a second angle on the same question.
-10. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
-   committed `docs/data/` files, no Colab needed at all (e.g. `embedding_arithmetic.js`, a
-   word2vec-style vector-arithmetic test — see the [Analysis Log](https://zanderhirman08.github.io/SATEMB/log.html)).
+   geometry-light max-shifted-patch check as a second angle on the same question. A follow-up
+   section (added after the dilution hypothesis was rejected) tests what's actually behind an
+   unexplained result the first pass turned up, using Sentinel-2's independent Scene
+   Classification Layer to check for snow/cloud-shadow contamination.
+10. **[`09_multiseason_composite.ipynb`](notebooks/09_multiseason_composite.ipynb)** — tests
+    whether the cropland/grassland confusion from notebook 03 is a single-date phenology
+    limitation rather than a Clay limitation: re-fetches and re-embeds a winter mosaic over the
+    full 725-chip AOI (notebook 06 did this once already but never exported the raw winter
+    vectors), concatenates each chip's summer and winter embeddings into a 2048-dim composite,
+    and reclusters — checking whether Cropland and Grassland separate more cleanly with a second
+    season's phenology information available, against the exact already-committed single-season
+    cluster labels for a controlled before/after comparison.
+11. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
+    committed `docs/data/` files, no Colab needed at all: `embedding_arithmetic.js` (the original
+    word2vec-style vector-arithmetic test) and `embedding_arithmetic_verified_anchors.js` (a
+    rebuild of the same test using manually visually-verified pure exemplars instead of
+    whole-cluster means — see the [Analysis Log](https://zanderhirman08.github.io/SATEMB/log.html)).
 
 ## What Clay's embeddings actually encode
 
@@ -207,6 +220,22 @@ its single most-shifted patch — but in the wrong direction to be a burn signal
 averaging wasn't hiding a real signal here; Clay's embeddings just don't track this fire's burn
 severity at either resolution tested.
 
+**Fifth follow-up: do manually verified anchors close the vector-arithmetic compositionality
+gap?** The original vector-arithmetic test built its "urban" and "vegetation" anchors from
+*whole* k-means clusters and its "water" anchor from a single chip picked by nearest-centroid
+distance to Boulder Reservoir — none of the three were ever actually looked at. Fetching real
+Esri World Imagery tiles for the strongest candidates in each concept turned up two things worth
+stating plainly: one candidate chip inside the validated "Built-up" cluster (low NDVI included)
+turned out to have Sloan's Lake covering roughly a third of it, and — more fundamentally — **no
+chip in this 725-chip grid is actually majority open water**, including the one originally used
+as the sole water anchor (mostly farmland/suburb with only a sliver of Boulder Reservoir
+visible). Rebuilding all three anchors from small sets of chips visually confirmed to be
+dominated by their concept (four each; water anchors from the four *least bad* available, not a
+majority-water example) widened the compositionality gap from 0.123 (0.951 top-1 similarity
+against a 0.828 baseline) to **0.189** (0.945 against a 0.756 baseline) — a real improvement,
+suggesting anchor construction quality was part of what was holding the original test back, on
+top of the nonlinear-encoder ceiling the paper already discusses.
+
 ## Running it yourself
 
 This repo splits cleanly into "author locally, run in Colab": everything here is already
@@ -243,10 +272,16 @@ in Google Colab rather than on this machine.
 11. Optional, needs GPU: run `07_cross_region_seattle.ipynb` for the cross-region generalization
     check. Fully self-contained (own AOI, own fetches, own everything), doesn't touch
     `docs/data/chips.geojson` — just commit the new `docs/figures/seattle_*.png` files.
-12. Optional, needs GPU: run `08_fire_patch_level.ipynb` for the patch-level retest of notebook
-    05's fire result. Fully self-contained (reruns the same small Marshall Fire AOI/dates as
-    notebook 05, own fetches), doesn't touch `docs/data/chips.geojson` — just commit the new
-    `docs/figures/fire_patch_*.png` files.
+12. Optional, needs GPU (or a patient CPU run — the AOI is small): run
+    `08_fire_patch_level.ipynb` for the patch-level retest of notebook 05's fire result, including
+    its SCL-based follow-up diagnostic. Fully self-contained (reruns the same small Marshall Fire
+    AOI/dates as notebook 05, own fetches), doesn't touch `docs/data/chips.geojson` — just commit
+    the new `docs/figures/fire_patch_*.png` files.
+13. Optional, needs GPU: run `09_multiseason_composite.ipynb` for the multi-season composite test
+    of the cropland/grassland confusion. Re-embeds the full 725-chip grid for a second season (a
+    real GPU job, not a small self-contained AOI), reads the summer baseline directly from
+    `docs/data/embeddings.bin`, doesn't touch `docs/data/chips.geojson` — just commit the new
+    `docs/figures/composite_*.png` files.
 
 ## Repo layout
 

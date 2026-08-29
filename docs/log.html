@@ -449,6 +449,50 @@
         honest place to leave this than forcing a tidy resolution the data doesn't support.
       </p>
     </section>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Do the vector-arithmetic anchors hold up when you actually look at them?</h2>
+      <p>
+        The embedding-arithmetic entry's anchors were never inspected: "urban" and "vegetation"
+        were the mean of an <em>entire</em> k-means cluster, and "water" was a single chip picked
+        by nearest-centroid distance to Boulder Reservoir, with no check that any of the three
+        actually looked like what they were supposed to represent. This entry fetches real Esri
+        World Imagery tiles directly (bypassing the live map's WebGL renderer, which doesn't
+        composite reliably in this project's automated environment) for the strongest candidates
+        in each concept, and rebuilds all three anchors from chips individually confirmed to be
+        dominated by their concept before rerunning the same arithmetic test.
+      </p>
+      <p>
+        Two things turned up immediately. First, one strong "urban" candidate &mdash; low NDVI,
+        inside the validated Built-up cluster &mdash; turned out to have Sloan's Lake covering
+        roughly a third of it once actually looked at. Second, and more fundamental: the original
+        water anchor (nearest chip to Boulder Reservoir) is mostly farmland and suburb with only a
+        sliver of the reservoir visible &mdash; and checking every plausible water-adjacent
+        candidate in the AOI, <strong>no chip in this 725-chip grid is actually majority open
+        water</strong>. That's consistent with the first entry's original note that water chips
+        were too sparse to form their own cluster, but this is the first time it's been checked
+        directly rather than inferred.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">0.123</div><div class="label">original gap (0.951 top-1 vs. 0.828 baseline)</div></div>
+        <div class="metric"><div class="value">0.189</div><div class="label">verified-anchor gap (0.945 top-1 vs. 0.756 baseline)</div></div>
+      </div>
+
+      <p>
+        Rebuilding "urban" and "vegetation" from four visually-confirmed pure chips each, and
+        "water" from the four <em>least-bad</em> available chips (still not majority water, but
+        honestly labeled as such rather than pretending otherwise), widened the compositionality
+        gap by roughly half. The top match itself and the baseline both dropped a bit (0.945 vs.
+        0.951; 0.756 vs. 0.828), but the gap between them &mdash; the actual measure of whether the
+        arithmetic is doing something specific rather than landing close to everything &mdash; grew
+        from 0.123 to 0.189. Anchor construction quality was a real, fixable part of what was
+        holding the original test back, on top of the nonlinear-encoder ceiling already discussed
+        in the paper. Full detail, including which candidate chips were checked and dropped, in
+        <a href="https://github.com/ZanderHirman08/SATEMB/blob/main/analysis/embedding_arithmetic_verified_anchors.js" target="_blank" rel="noopener"><code>analysis/embedding_arithmetic_verified_anchors.js</code></a>.
+      </p>
+    </section>
   </div>
 </body>
 </html>

@@ -9,12 +9,21 @@ https://zanderhirman08.github.io/SATEMB/paper.html
 
 **Status as of 2026-08-29: the six originally planned exploratory experiments are all
 complete** (embedding arithmetic, similarity heatmap, elevation correlation, Marshall Fire
-before/after, seasonal stability, cross-region generalization to Seattle), plus one
-unplanned follow-up (notebook 08: patch-level retest of the fire result — dilution ruled out,
-an unexplained inverse correlation found instead). The project has three documentation
-surfaces that all need updating together when a new finding lands — see "Writing up a new
-finding" below. Check `docs/log.html`'s last entry and recent git log for what's actually been
-done most recently; this file won't stay current on its own.
+before/after, seasonal stability, cross-region generalization to Seattle), plus a growing set of
+unplanned follow-ups chasing open questions those six raised:
+- Notebook 08 (fire, patch-level retest): **done** — dilution ruled out, an unexplained inverse
+  correlation found instead. A second follow-up appended to the same notebook (SCL-based
+  snow/cloud-shadow diagnostic, testing what's actually behind that inverse correlation) is
+  **written but not yet run** — needs a fresh Colab pass.
+- `analysis/embedding_arithmetic_verified_anchors.js` (manually-verified vector-arithmetic
+  anchors): **done**, fully local — compositionality gap widened from 0.123 to 0.189; also found
+  no chip in the 725-chip grid is actually majority open water.
+- Notebook 09 (multi-season composite, cropland/grassland confusion): **written but not yet
+  run** — needs a fresh Colab GPU pass (725 chips, a real job, not a small self-contained AOI).
+
+The project has three documentation surfaces that all need updating together when a new finding
+lands — see "Writing up a new finding" below. Check `docs/log.html`'s last entry and recent git
+log for what's actually been done most recently; this file won't stay current on its own.
 
 ## Environment constraints (important, easy to forget)
 - **No Python on the local machine.** Only git + bash + node are available locally. All

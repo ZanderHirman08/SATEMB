@@ -540,8 +540,12 @@
       embedding volatility (forest clusters shift roughly two to three times more between summer
       and winter than grassland does). The embedding space exhibits partial, not full, linear
       compositionality (a vector-arithmetic query landing 0.123 cosine similarity points above an
-      all-chip baseline). Four supplementary tests, documented in full in the project's public
-      analysis log, extended these findings. Embedding-shift measurements throughout this paper
+      all-chip baseline). Five supplementary tests, documented in full in the project's public
+      analysis log, extended these findings. Rebuilding the vector-arithmetic anchors from chips
+      individually confirmed against real imagery, rather than whole-cluster means and a single
+      proximity-based pick, widened that compositionality gap to 0.189 (0.945 against a 0.756
+      baseline) and surfaced a landscape limitation along the way: no chip in the 725-chip grid is
+      actually majority open water. Embedding-shift measurements throughout this paper
       reflect real image content rather than Clay's time-conditioning metadata (date-only shift
       averaged 4% of a matched real-shift comparison). Embedding movement showed no correlation
       with independently measured Marshall Fire burn severity at either whole-chip or patch
@@ -556,9 +560,7 @@
     </p>
     <p>
       Future work should test whether a multi-date composite spanning a full growing season
-      resolves the cropland-grassland confusion observed in Table 1, and whether the
-      vector-arithmetic compositionality gap reported in Table 3 narrows or widens when concept
-      anchors are built from manually verified single chips rather than cluster means.
+      resolves the cropland-grassland confusion observed in Table 1.
     </p>
 
     <h2 class="section-title">References</h2>
