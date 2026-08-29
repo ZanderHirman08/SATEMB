@@ -3,8 +3,9 @@
 Used by notebooks/01_fetch_and_chip.ipynb (Sentinel-2 L2A),
 notebooks/03_analyze_and_export.ipynb (ESA WorldCover, for validation),
 notebooks/04_elevation_correlation.ipynb (USGS 3DEP elevation, for validation),
-notebooks/05_fire_before_after.ipynb (pre/post Marshall Fire comparison), and
-notebooks/06_seasonal_stability.ipynb (summer-vs-winter embedding comparison).
+notebooks/05_fire_before_after.ipynb (pre/post Marshall Fire comparison),
+notebooks/06_seasonal_stability.ipynb (summer-vs-winter embedding comparison),
+and notebooks/07_cross_region_seattle.ipynb (Front Range vs. Seattle check).
 """
 
 from __future__ import annotations
@@ -23,6 +24,14 @@ FRONT_RANGE_BBOX = [-105.55, 39.55, -104.75, 40.25]
 # through Superior to Louisville, CO), for notebook 05's before/after study --
 # small on purpose so a GPU embedding pass over 3 dates is fast and cheap.
 MARSHALL_FIRE_BBOX = [-105.25, 39.89, -105.02, 40.02]
+
+# Seattle / Puget Sound, WA, for notebook 07's cross-region generalization
+# check -- deliberately a different biome from the Front Range (marine
+# climate, year-round evergreen forest, real open water at scale via Puget
+# Sound and Lake Washington, a denser urban core). UTM zone 10N here, not
+# 13N -- see SEATTLE_CRS below.
+SEATTLE_BBOX = [-122.55, 47.45, -122.05, 47.75]
+SEATTLE_CRS = "EPSG:32610"
 
 # Sentinel-2 bands Clay v1.5 was trained on for the "sentinel-2-l2a" platform,
 # in the order clay_embed.py expects. B01/B09/B10 are dropped (60m atmospheric

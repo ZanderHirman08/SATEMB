@@ -64,7 +64,13 @@ embedding space is capturing anything real, these should end up visually and num
    question directly: re-embeds a sample of chips with identical pixels but a swapped date, to
    separate how much embedding movement comes from real seasonal content vs. Clay's own
    date-conditioning input. Reuses `docs/data/embeddings.bin` as the summer baseline directly.
-8. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
+8. **[`07_cross_region_seattle.ipynb`](notebooks/07_cross_region_seattle.ipynb)** — re-runs the
+   whole pipeline (fetch, chip, embed, PCA, cluster-vs-WorldCover, elevation correlation) on a
+   deliberately different landscape, Seattle/Puget Sound, to check whether the Front Range's
+   findings are real structure or an artifact of one confounded landscape. Same free data sources,
+   different biome, climate, and elevation range — self-contained, own AOI, doesn't touch
+   `docs/data/chips.geojson`.
+9. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
    committed `docs/data/` files, no Colab needed at all (e.g. `embedding_arithmetic.js`, a
    word2vec-style vector-arithmetic test — see the [Analysis Log](https://zanderhirman08.github.io/SATEMB/log.html)).
 
@@ -201,6 +207,9 @@ in Google Colab rather than on this machine.
     reuses `docs/data/embeddings.bin` as the summer baseline directly (no Drive round-trip) and
     adds a new `seasonal_shift` property onto `docs/data/chips.geojson` — commit that plus the new
     `docs/figures/seasonal_*.png` files.
+11. Optional, needs GPU: run `07_cross_region_seattle.ipynb` for the cross-region generalization
+    check. Fully self-contained (own AOI, own fetches, own everything), doesn't touch
+    `docs/data/chips.geojson` — just commit the new `docs/figures/seattle_*.png` files.
 
 ## Repo layout
 
