@@ -90,6 +90,57 @@ def search_single_scene(
     return best
 
 
+# Sentinel-2 Scene Classification Layer codes for cloud shadow, cloud
+# (medium/high probability), thin cirrus, and snow/ice -- see the SCL
+# definition in the Sentinel-2 User Handbook (European Space Agency, 2015).
+SCL_BAD_CLASSES = {3, 8, 9, 10, 11}
+
+
+def select_clearest_scene(
+    catalog: pystac_client.Client,
+    bbox: list[float],
+    datetime_range: str,
+    crs: str = "EPSG:32613",
+    resolution: float = 10,
+    max_candidates: int = 6,
+    label: str = "",
+):
+    """Pick the scene in a date range with the lowest actual cloud+snow pixel
+    fraction *over this specific AOI*, checked directly via the SCL
+    classification band -- not trusted from STAC's eo:cloud_cover metadata,
+    which is computed over the whole scene (not this AOI) and says nothing
+    about snow. Snow in particular matters for notebook 05: winter Front
+    Range imagery routinely has patchy snow that eo:cloud_cover never flags
+    at all.
+
+    More expensive than search_single_scene() (reads real pixels for several
+    candidates, not just metadata), but the AOI here is small enough that
+    this stays fast.
+    """
+    import odc.stac
+
+    items = search_sentinel2(catalog, bbox=bbox, datetime_range=datetime_range, max_cloud_cover=80.0)
+    candidates = sorted(items, key=lambda it: it.properties.get("eo:cloud_cover", 100))[:max_candidates]
+
+    tag = f"[{label}] " if label else ""
+    best_item, best_frac = None, 1.0
+    for item in candidates:
+        ds = odc.stac.load([item], bands=["SCL"], bbox=bbox, crs=crs, resolution=resolution, resampling="nearest")
+        scl_var = ds["SCL"]
+        scl = scl_var.isel(time=0).values if "time" in scl_var.dims else scl_var.values
+        bad_frac = float(np.isin(scl, list(SCL_BAD_CLASSES)).mean())
+        print(
+            f"  {tag}candidate {item.id}  date={item.datetime.date()}  "
+            f"scene cloud_cover={item.properties.get('eo:cloud_cover'):.1f}%  "
+            f"AOI cloud+snow fraction={bad_frac * 100:.1f}%"
+        )
+        if bad_frac < best_frac:
+            best_item, best_frac = item, bad_frac
+
+    print(f"{tag}selected {best_item.id}  date={best_item.datetime.date()}  AOI cloud+snow fraction={best_frac * 100:.1f}%")
+    return best_item
+
+
 def search_worldcover(catalog: pystac_client.Client, bbox: list[float] = FRONT_RANGE_BBOX):
     """Search the ESA WorldCover 10m land-cover collection over the AOI.
 
