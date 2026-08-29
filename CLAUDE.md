@@ -9,10 +9,12 @@ https://zanderhirman08.github.io/SATEMB/paper.html
 
 **Status as of 2026-08-29: the six originally planned exploratory experiments are all
 complete** (embedding arithmetic, similarity heatmap, elevation correlation, Marshall Fire
-before/after, seasonal stability, cross-region generalization to Seattle). The project has
-three documentation surfaces that all need updating together when a new finding lands — see
-"Writing up a new finding" below. Check `docs/log.html`'s last entry and recent git log for
-what's actually been done most recently; this file won't stay current on its own.
+before/after, seasonal stability, cross-region generalization to Seattle), plus one
+unplanned follow-up (notebook 08: patch-level retest of the fire result — dilution ruled out,
+an unexplained inverse correlation found instead). The project has three documentation
+surfaces that all need updating together when a new finding lands — see "Writing up a new
+finding" below. Check `docs/log.html`'s last entry and recent git log for what's actually been
+done most recently; this file won't stay current on its own.
 
 ## Environment constraints (important, easy to forget)
 - **No Python on the local machine.** Only git + bash + node are available locally. All
@@ -24,6 +26,11 @@ what's actually been done most recently; this file won't stay current on its own
   open in their browser** — `git pull` inside Colab updates files on disk but not the
   in-memory cell content of an already-open tab. Always tell the user to close and reopen the
   notebook fresh from the `colab.research.google.com/github/...` link after any edit here.
+- **Free-tier Colab GPU quota runs out.** When it does, check whether the notebook's AOI is
+  small (a self-contained follow-up like notebooks 05/08, ~50 chips, not the 725-chip main
+  pipeline) — those are small enough to fall back to a plain CPU runtime instead of waiting out
+  the quota, just slower. Pattern: detect with `torch.cuda.is_available()` and set
+  `device = "cpu"` rather than hard-asserting on CUDA (see notebook 08's setup cell).
 - Committing results back from Colab uses a GitHub personal access token stored as a Colab
   Secret (`GITHUB_TOKEN`, repo write access). Standard cell to add at the end of a notebook
   (this snippet only exists here now — it was previously typed live in Colab each time and
