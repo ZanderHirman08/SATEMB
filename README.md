@@ -88,7 +88,15 @@ embedding space is capturing anything real, these should end up visually and num
     and reclusters — checking whether Cropland and Grassland separate more cleanly with a second
     season's phenology information available, against the exact already-committed single-season
     cluster labels for a controlled before/after comparison.
-11. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
+11. **[`10_cross_model_prithvi.ipynb`](notebooks/10_cross_model_prithvi.ipynb)** — tests whether
+    the "PC1 is a terrain axis" finding is a real property of satellite foundation models
+    generally or an artifact of the Clay checkpoint specifically, by rerunning the identical
+    elevation/NDVI-correlation and WorldCover-clustering tests on the same AOI with a second,
+    independently-trained foundation model ([Prithvi-EO-2.0](https://huggingface.co/ibm-nasa-geospatial/Prithvi-EO-2.0-300M),
+    IBM/NASA). A new `src/prithvi_embed.py` deliberately reads bands/normalization/image-size off
+    the loaded model at runtime rather than trusting documentation, after two independent lookups
+    while building it turned up inconsistent details.
+12. **[`analysis/`](analysis/)** — small follow-up experiments that run entirely against the
     committed `docs/data/` files, no Colab needed at all: `embedding_arithmetic.js` (the original
     word2vec-style vector-arithmetic test) and `embedding_arithmetic_verified_anchors.js` (a
     rebuild of the same test using manually visually-verified pure exemplars instead of
@@ -319,6 +327,14 @@ in Google Colab rather than on this machine.
     real GPU job, not a small self-contained AOI), reads the summer baseline directly from
     `docs/data/embeddings.bin`, doesn't touch `docs/data/chips.geojson` — just commit the new
     `docs/figures/composite_*.png` files.
+14. Optional, needs GPU: run `10_cross_model_prithvi.ipynb` for the cross-model replication check.
+    Fully self-contained (own AOI/elevation/WorldCover fetches, doesn't read `docs/data/`),
+    installs `terratorch` in addition to the shared requirements. **More likely than other
+    notebooks to need a fix-and-rerun cycle** — it deliberately discovers Prithvi's real
+    bands/normalization/image-size from the loaded model at runtime rather than trusting
+    (possibly wrong) documentation, so a first-run error is expected debugging, not a sign
+    something is fundamentally broken; the error messages point at the actual fix. Just commit
+    the new `docs/figures/prithvi_*.png` files once it runs clean.
 
 ## Repo layout
 

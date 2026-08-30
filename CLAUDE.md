@@ -25,6 +25,13 @@ unplanned follow-ups chasing open questions those six raised:
   improved (0.275 to 0.347) but Cropland/Grassland separation specifically got *worse* (purity
   0.859→0.587 and 0.329→0.286), rejecting the phenology hypothesis; likely explanation is the
   second season reinforcing the existing terrain/snow axis rather than adding a phenology signal.
+- Notebook 10 (cross-model replication, does the terrain-axis finding hold on a second
+  foundation model): **written but not yet run** — needs a fresh Colab GPU pass. Loads
+  Prithvi-EO-2.0 (IBM/NASA) via `terratorch` and reruns the elevation/NDVI/WorldCover tests
+  independently. Flagged as higher-risk than other notebooks: `src/prithvi_embed.py`
+  deliberately discovers bands/normalization/image-size from the live model at runtime rather
+  than trusting documentation (two web lookups while building it gave inconsistent answers), so
+  expect a possible debug-and-rerun cycle on first attempt, not a working-first-try guarantee.
 
 The project has three documentation surfaces that all need updating together when a new finding
 lands — see "Writing up a new finding" below. Check `docs/log.html`'s last entry and recent git
@@ -75,14 +82,16 @@ log for what's actually been done most recently; this file won't stay current on
   rather than pixels.
 
 ## Repo structure
-- `notebooks/01-07` — the pipeline and follow-up experiments, run in Colab in order.
-  01-03 build the main 725-chip dataset; 04-07 are independent follow-ups (04 and 06 read the
-  committed `docs/data/` files directly with no Drive round-trip; 05 and 07 are fully
-  self-contained with their own small AOIs).
-- `src/` — shared helpers (`stac_utils.py`, `clay_embed.py`, `viz_utils.py`) imported by every
-  notebook. Check here first before writing new STAC-search or embedding logic — most patterns
-  already exist (e.g. `select_clearest_scene` for snow/cloud-aware date picking,
-  `select_least_cloudy_per_tile` for multi-tile AOI coverage).
+- `notebooks/01-10` — the pipeline and follow-up experiments, run in Colab in order.
+  01-03 build the main 725-chip dataset; 04-10 are independent follow-ups (04 and 06 read the
+  committed `docs/data/` files directly with no Drive round-trip; 05, 07, 08, 09, and 10 are
+  fully self-contained with their own fetches).
+- `src/` — shared helpers (`stac_utils.py`, `clay_embed.py`, `prithvi_embed.py`, `viz_utils.py`)
+  imported by every notebook. Check here first before writing new STAC-search or embedding logic
+  — most patterns already exist (e.g. `select_clearest_scene` for snow/cloud-aware date picking,
+  `select_least_cloudy_per_tile` for multi-tile AOI coverage). `prithvi_embed.py` deliberately
+  discovers the model's bands/normalization/image-size at runtime rather than hardcoding them —
+  keep that pattern if adding a third model rather than reverting to hardcoded config.
 - `docs/` — the live site: `index.html` (interactive map), `log.html` (informal findings
   journal, chronological, includes failed attempts), `paper.html` (formal IMRaD+ academic
   write-up), `data/chips.geojson` + `embeddings.bin` (the committed dataset the map and
