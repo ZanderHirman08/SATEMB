@@ -12,9 +12,12 @@ complete** (embedding arithmetic, similarity heatmap, elevation correlation, Mar
 before/after, seasonal stability, cross-region generalization to Seattle), plus a growing set of
 unplanned follow-ups chasing open questions those six raised:
 - Notebook 08 (fire, patch-level retest): **done** — dilution ruled out, an unexplained inverse
-  correlation found instead. A second follow-up appended to the same notebook (SCL-based
-  snow/cloud-shadow diagnostic, testing what's actually behind that inverse correlation) is
-  **written but not yet run** — needs a fresh Colab pass.
+  correlation found instead. Its SCL-based follow-up diagnostic (snow/cloud-shadow contamination
+  as the cause) is also **done**: mixed result, not a clean resolution — the direct max-shift-vs-
+  typical-patch comparison actually ran backwards, but modest significant correlations (r=-0.33
+  w/ dNBR, r=0.36 w/ shift) plus one visually unambiguous example (a lake freezing over between
+  the two dates) confirm non-fire seasonal content is part of the story without fully explaining
+  the original r=-0.55.
 - `analysis/embedding_arithmetic_verified_anchors.js` (manually-verified vector-arithmetic
   anchors): **done**, fully local — compositionality gap widened from 0.123 to 0.189; also found
   no chip in the 725-chip grid is actually majority open water.

@@ -236,6 +236,25 @@ against a 0.828 baseline) to **0.189** (0.945 against a 0.756 baseline) — a re
 suggesting anchor construction quality was part of what was holding the original test back, on
 top of the nonlinear-encoder ceiling the paper already discusses.
 
+**Sixth follow-up: is the notebook 08 anomaly snow/cloud-shadow contamination?** A diagnostic
+appended to notebook 08 checked whether each chip's single most-shifted patch has unusually
+noisy Sentinel-2 Scene Classification Layer output (cloud, cloud shadow, cirrus, or snow flags
+flipping between the pre-fire and immediate-post-fire dates) — the leading guess for why chips
+that burned *less* severely showed a *larger* single-patch shift. The result is a genuine mixed
+bag, not a clean resolution either way. The most direct comparison actually runs against the
+hypothesis: the max-shifted patch averaged **less** SCL-flagged change than a typical patch in
+the same chip (0.001 vs. 0.002). But across chips, the correlations are modest, real, and in the
+predicted direction (r = −0.33 with dNBR, p = 0.02; r = 0.36 with the shift itself, p = 0.01) —
+real evidence, just not enough to explain the original r = −0.55 by itself. Visually, the single
+chip with the largest max-patch shift in the whole 48-chip sample makes the underlying mechanism
+unmistakable even where SCL missed it: a lake that's open water pre-fire is visibly **frozen
+over** in the immediate-post-fire image, an obviously fire-irrelevant seasonal change that
+Sentinel-2's automated classifier apparently still called "water" in both dates rather than
+flagging as changed. Net read: non-fire seasonal content is clearly part of the story — concretely
+demonstrated for at least this one case — but SCL's cloud/snow classes aren't a complete proxy
+for "unrelated seasonal change," so the anomaly isn't fully explained by this test. Left open
+rather than forced closed.
+
 ## Running it yourself
 
 This repo splits cleanly into "author locally, run in Colab": everything here is already

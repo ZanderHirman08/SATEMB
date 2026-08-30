@@ -493,6 +493,72 @@
         <a href="https://github.com/ZanderHirman08/SATEMB/blob/main/analysis/embedding_arithmetic_verified_anchors.js" target="_blank" rel="noopener"><code>analysis/embedding_arithmetic_verified_anchors.js</code></a>.
       </p>
     </section>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Chasing the fire anomaly further: mostly no, except for one very telling lake</h2>
+      <p>
+        Two entries back, the strongest single result was also the strangest: a chip's single
+        most-shifted patch correlated <em>negatively</em> with how severely that chip burned
+        (r = &minus;0.55) &mdash; backwards from a burn signal. The standing guess was snow or
+        cloud-shadow contamination in an unrelated patch. Sentinel-2's Scene Classification Layer
+        gives a per-pixel cloud/shadow/snow flag independent of both Clay and dNBR, so a
+        diagnostic appended to that notebook checked directly: does each chip's max-shifted patch
+        have an unusually high fraction of SCL-flagged pixels that changed classification between
+        the pre-fire and immediate-post-fire dates?
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">0.001</div><div class="label">SCL-changed fraction at the max-shift patch</div></div>
+        <div class="metric"><div class="value">0.002</div><div class="label">SCL-changed fraction at a typical patch, same chip</div></div>
+      </div>
+
+      <p>
+        The most direct comparison actually runs backwards from the hypothesis: the max-shift
+        patch is, if anything, <em>less</em> SCL-flagged than a typical patch in the same chip, not
+        more. Taken alone, that would be a clean rejection. But it isn't the whole story &mdash;
+        across the 48 chips, the correlations are modest but real, and in the direction the
+        hypothesis predicted:
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">r = &minus;0.33</div><div class="label">SCL-changed fraction vs. dNBR (p = 0.02)</div></div>
+        <div class="metric"><div class="value">r = 0.36</div><div class="label">SCL-changed fraction vs. the max-patch shift itself (p = 0.01)</div></div>
+      </div>
+
+      <figure>
+        <img src="figures/fire_patch_snow_diagnostic.png" alt="Scatter plots of SCL-changed fraction against dNBR and against max-patch shift">
+        <figcaption>Max-shift patch's SCL-changed pixel fraction against chip dNBR (left) and against the shift itself (right). Nearly every chip sits at zero &mdash; two outliers are doing almost all the work.</figcaption>
+      </figure>
+
+      <p>
+        Real, but small &mdash; nowhere near enough on its own to explain the original r =
+        &minus;0.55. The visual check resolves why: the single chip with the largest max-patch
+        shift in the entire sample (1.544, more than double the next-highest) is centered on a
+        lake that's open dark water in the pre-fire true-color image and visibly <strong>frozen
+        over</strong> in the immediate-post-fire image &mdash; an obviously large, obviously
+        fire-irrelevant seasonal change. Sentinel-2's automated classifier apparently still called
+        the icy lake surface "water" in both dates rather than flagging it as changed, which is
+        exactly why the numeric SCL test undercounts this specific failure mode even though the
+        underlying mechanism (unrelated seasonal content elsewhere in the chip) is right there to
+        see.
+      </p>
+
+      <figure>
+        <img src="figures/fire_patch_snow_diagnostic_example_chip.png" alt="Pre-fire and post-fire true color of the chip with the largest max-patch shift, showing a lake freezing over">
+        <figcaption>The chip with the single largest max-patch shift measured anywhere in this project. Left: pre-fire (Dec 2021), open water. Right: the same chip, immediate post-fire (Mar 2022) &mdash; the lake has frozen over. dNBR here is &minus;0.045: essentially no burn at all.</figcaption>
+      </figure>
+
+      <p>
+        Net result: not a clean resolution, and better left that way than forced into one.
+        Non-fire seasonal content is clearly part of what's driving the anomaly &mdash; concretely
+        demonstrated for at least this one chip &mdash; but SCL's cloud/snow classes aren't a
+        complete proxy for "something unrelated changed here," so most of the r = &minus;0.55
+        still isn't explained by this test. The honest state of this question: real evidence
+        against a fire explanation, a confirmed example of the general mechanism, and no full
+        accounting yet for the rest of the correlation.
+      </p>
+    </section>
   </div>
 </body>
 </html>
