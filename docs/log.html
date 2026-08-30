@@ -559,6 +559,67 @@
         accounting yet for the rest of the correlation.
       </p>
     </section>
+
+    <section class="entry">
+      <div class="entry-date">Aug 2026</div>
+      <h2>Does a second season help, or just make the strongest axis stronger?</h2>
+      <p>
+        The very first entry's honest miss was cropland and grassland bleeding across several
+        clusters instead of separating cleanly, with a standing explanation: those two classes
+        differ mainly in phenology (crop calendar, irrigation timing), which one mid-summer
+        snapshot can't see. That's been the paper's stated future work ever since. This entry
+        finally tests it: re-embed the full 725-chip grid for a winter mosaic, concatenate each
+        chip's summer and winter vectors into a 2048-dim composite, and recluster &mdash; checked
+        against the exact already-committed single-season cluster labels for a controlled
+        before/after comparison, not a fresh unrelated re-run.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">0.275 &rarr; 0.347</div><div class="label">Adjusted Rand Index vs. WorldCover, single-season &rarr; composite</div></div>
+      </div>
+
+      <p>
+        The headline number moved the right way, and by a real amount &mdash; a jump like that
+        isn't noise. If the story ended there, this would read as confirmation. It doesn't end
+        there.
+      </p>
+
+      <div class="metric-row">
+        <div class="metric"><div class="value">0.859 &rarr; 0.587</div><div class="label">Cropland modal-cluster purity, single-season &rarr; composite (n=92)</div></div>
+        <div class="metric"><div class="value">0.329 &rarr; 0.286</div><div class="label">Grassland modal-cluster purity, single-season &rarr; composite (n=252)</div></div>
+      </div>
+
+      <figure>
+        <img src="figures/composite_cropland_grassland_purity.png" alt="Bar chart comparing single-season and composite modal-cluster purity for Cropland and Grassland">
+        <figcaption>Modal-cluster purity (fraction of a class's chips landing in its single most common cluster) for the two classes the phenology hypothesis specifically targeted. Both got worse with the composite, not better.</figcaption>
+      </figure>
+
+      <p>
+        The two classes this test was actually about got <em>less</em> cleanly separated, not more
+        &mdash; cropland's drop (&minus;0.272) is the larger of two real, unambiguous declines. The
+        phenology hypothesis, stated as future work since the very first entry, doesn't hold up:
+        adding a second season didn't give clustering the missing signal to tell cropland from
+        grassland. Something else is responsible for the overall ARI gain.
+      </p>
+
+      <figure>
+        <img src="figures/composite_cluster_vs_worldcover.png" alt="Confusion matrix of two-season composite embedding clusters against WorldCover classes">
+        <figcaption>Two-season composite clusters vs. WorldCover. Built-up and Tree cover are as clean as ever (or cleaner); Cropland and Grassland now split across two substantially mixed clusters instead of concentrating in one.</figcaption>
+      </figure>
+
+      <p>
+        The likely explanation ties back to two earlier entries rather than anything new: PC1 was
+        already shown to be more fundamentally a terrain axis than a development axis (elevation
+        r = &minus;0.82), and forest was already shown to be roughly 2&ndash;3&times; more
+        seasonally volatile than grassland (the seasonal-stability entry, a clean snow-line
+        effect). A winter mosaic most likely amplifies that same dominant terrain/snow contrast
+        &mdash; sharpening whatever was already easy to separate (Built-up, Tree cover) &mdash;
+        rather than contributing an orthogonal, phenology-specific signal that would actually help
+        distinguish two classes that already look similar on that dominant axis. The composite
+        embedding is measurably better overall and measurably worse at the one specific thing it
+        was built to test &mdash; both real, and worth sitting with rather than smoothing over.
+      </p>
+    </section>
   </div>
 </body>
 </html>

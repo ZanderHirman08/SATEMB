@@ -255,6 +255,24 @@ demonstrated for at least this one case — but SCL's cloud/snow classes aren't 
 for "unrelated seasonal change," so the anomaly isn't fully explained by this test. Left open
 rather than forced closed.
 
+**Seventh follow-up: does a multi-season composite resolve the cropland/grassland confusion?**
+[`09_multiseason_composite.ipynb`](notebooks/09_multiseason_composite.ipynb) re-embedded the
+full 725-chip grid for a second season (winter) and concatenated it with the committed summer
+embeddings into a 2048-dim composite, reclustering and comparing against the exact same
+already-committed single-season cluster labels. The headline number went the right way —
+Adjusted Rand Index improved from 0.275 to **0.347**, a real, substantial jump — but the
+specific classes the hypothesis targeted did not: Cropland's modal-cluster purity *dropped* from
+0.859 to 0.587 (n=92), and Grassland's dropped slightly too (0.329 to 0.286, n=252). The
+phenology hypothesis, stated explicitly as future work in the paper, doesn't hold up: adding a
+second season didn't sharpen cropland/grassland separation, it made it worse. The most likely
+explanation, tying back to two earlier entries: winter mosaics amplify the same terrain/snow
+axis already shown to dominate PC1 and to make forest far more seasonally volatile than
+grassland (the seasonal-stability entry) — so concatenating summer and winter most likely
+reinforces the embedding space's existing dominant contrast rather than contributing an
+orthogonal, phenology-specific signal that would actually help distinguish cropland from
+grassland. The overall ARI gain is real; it just isn't coming from where the hypothesis
+predicted.
+
 ## Running it yourself
 
 This repo splits cleanly into "author locally, run in Colab": everything here is already

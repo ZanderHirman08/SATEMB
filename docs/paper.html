@@ -540,27 +540,29 @@
       embedding volatility (forest clusters shift roughly two to three times more between summer
       and winter than grassland does). The embedding space exhibits partial, not full, linear
       compositionality (a vector-arithmetic query landing 0.123 cosine similarity points above an
-      all-chip baseline). Five supplementary tests, documented in full in the project's public
-      analysis log, extended these findings. Rebuilding the vector-arithmetic anchors from chips
-      individually confirmed against real imagery, rather than whole-cluster means and a single
-      proximity-based pick, widened that compositionality gap to 0.189 (0.945 against a 0.756
-      baseline) and surfaced a landscape limitation along the way: no chip in the 725-chip grid is
-      actually majority open water. Embedding-shift measurements throughout this paper
-      reflect real image content rather than Clay's time-conditioning metadata (date-only shift
-      averaged 4% of a matched real-shift comparison). Embedding movement showed no correlation
-      with independently measured Marshall Fire burn severity at either whole-chip or patch
-      resolution (r = &minus;0.03, n = 9,408 patches), ruling out mean-pooling as the cause and
-      instead surfacing an unexplained inverse relationship between burn severity and a chip's
-      single most-shifted patch (r = &minus;0.55).
-      Rerunning the full pipeline on a structurally different landscape (Seattle, dominated by
-      open water rather than terrain) reproduced comparable structure quality (Adjusted Rand Index
-      0.250 versus 0.275) with a different dominant-axis character, confirming embedding structure
-      is real and reproducible in kind across landscapes even where what any one component
-      represents is landscape-specific.
+      all-chip baseline). Six supplementary tests extended these findings (full detail in the
+      project's public analysis log). A winter-season composite embedding raised overall
+      WorldCover agreement (Adjusted Rand Index 0.275 to 0.347) but separated Cropland and
+      Grassland less cleanly, not more (modal-cluster purity 0.859 to 0.587 and 0.329 to 0.286
+      respectively), suggesting the gain came from reinforcing the existing terrain/snow axis
+      rather than adding a phenology-specific signal. Rebuilding vector-arithmetic anchors from
+      individually verified chips, rather than whole-cluster means and a single proximity pick,
+      widened the compositionality gap to 0.189 (0.945 against 0.756) and revealed that no chip in
+      the grid is majority open water. Embedding shift reflects real image content, not Clay's
+      time-conditioning metadata (date-only shift was 4% of a matched real-shift comparison).
+      Embedding movement showed no correlation with Marshall Fire burn severity at whole-chip or
+      patch resolution (r = &minus;0.03, n = 9,408), ruling out mean-pooling as the cause and
+      surfacing an unexplained inverse relationship with a chip's single most-shifted patch
+      (r = &minus;0.55) instead. Rerunning the pipeline on Seattle (open water rather than
+      terrain) reproduced comparable structure quality (Adjusted Rand Index 0.250 versus 0.275)
+      with a different dominant-axis character, confirming embedding structure is reproducible
+      across landscapes even where any one component's meaning is landscape-specific.
     </p>
     <p>
-      Future work should test whether a multi-date composite spanning a full growing season
-      resolves the cropland-grassland confusion observed in Table 1.
+      Future work should test whether removing or downweighting the embedding's dominant
+      terrain/snow-correlated axis before combining seasons isolates a genuine phenology signal
+      for cropland-grassland separation, since simple concatenation instead reinforced that
+      already-dominant axis.
     </p>
 
     <h2 class="section-title">References</h2>

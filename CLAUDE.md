@@ -21,8 +21,10 @@ unplanned follow-ups chasing open questions those six raised:
 - `analysis/embedding_arithmetic_verified_anchors.js` (manually-verified vector-arithmetic
   anchors): **done**, fully local — compositionality gap widened from 0.123 to 0.189; also found
   no chip in the 725-chip grid is actually majority open water.
-- Notebook 09 (multi-season composite, cropland/grassland confusion): **written but not yet
-  run** — needs a fresh Colab GPU pass (725 chips, a real job, not a small self-contained AOI).
+- Notebook 09 (multi-season composite, cropland/grassland confusion): **done** — overall ARI
+  improved (0.275 to 0.347) but Cropland/Grassland separation specifically got *worse* (purity
+  0.859→0.587 and 0.329→0.286), rejecting the phenology hypothesis; likely explanation is the
+  second season reinforcing the existing terrain/snow axis rather than adding a phenology signal.
 
 The project has three documentation surfaces that all need updating together when a new finding
 lands — see "Writing up a new finding" below. Check `docs/log.html`'s last entry and recent git
