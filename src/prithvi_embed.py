@@ -103,12 +103,27 @@ def discover_config(model) -> dict:
             "and PRETRAINED_BANDS ordering, then update this module."
         )
 
+    # img_size can be a plain int or a (height, width) tuple -- this project's
+    # chip grid is always square, so require both dims match if it's a tuple
+    # rather than silently picking one and risking a shape mismatch later.
+    raw_img_size = model.img_size
+    if isinstance(raw_img_size, (tuple, list)):
+        if len(set(raw_img_size)) != 1:
+            raise ValueError(
+                f"model.img_size={raw_img_size} isn't square -- this project's chip grid "
+                "(stac_utils.make_pixel_chip_grid) only supports square chips. Either pick one "
+                "dimension deliberately here, or handle a non-square grid in the notebook."
+            )
+        img_size = int(raw_img_size[0])
+    else:
+        img_size = int(raw_img_size)
+
     cfg = {
         "bands": s2_bands,
         "hls_band_names": band_names,
         "mean": PRITHVI_V2_MEAN,
         "std": PRITHVI_V2_STD,
-        "img_size": int(model.img_size),
+        "img_size": img_size,
         "in_chans": int(model.in_chans),
         "embed_dim": int(model.embed_dim),
         "num_frames": int(model.num_frames),
